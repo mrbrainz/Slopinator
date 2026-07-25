@@ -38,6 +38,17 @@ python3 master.py --batch "tracks/*.wav" --outdir mastered/
 python3 master.py --batch "tracks/*.wav" --outdir mastered/ --format soundcloud
 ```
 
+**Analyze (measure a file without mastering it):**
+```bash
+python3 master.py --analyze input.wav
+# {"path": "input.wav", "duration_sec": 214.3, "sample_rate": 44100,
+#  "channels": 2, "bit_depth": "PCM_24", "lufs": -15.8, "true_peak_db": -4.2}
+```
+Prints integrated LUFS, true peak (oversampled, catches inter-sample
+peaks), duration, sample rate, channels, and bit depth as one JSON line.
+`lufs`/`true_peak_db` are `null` for silent/near-silent input rather than
+`-Infinity`.
+
 ## Loudness presets (`--format`)
 
 | Preset       | Target LUFS |

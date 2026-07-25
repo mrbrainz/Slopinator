@@ -16,6 +16,7 @@ Run `python3 master.py --help` for all options.
 
 import argparse
 import glob
+import json
 import os
 import sys
 
@@ -179,6 +180,33 @@ def master_file(in_path, out_path, target_lufs=-14.0, ceiling_db=-1.0,
     print(f"Done. Final: {final_loudness:.1f} LUFS, {true_peak_db:.2f} dBTP\n")
 
 
+def analyze_file(path, oversample=4):
+    """Measure integrated LUFS, true peak, and basic format info for an
+    unprocessed file, without running it through the mastering chain."""
+    info = sf.info(path)
+    data, sr = load_audio(path)
+
+    meter = pyln.Meter(sr)
+    lufs = meter.integrated_loudness(data)
+
+    # Oversample for a genuine true-peak reading (catches inter-sample
+    # peaks a plain sample-peak read would miss) — same technique
+    # true_peak_limiter() uses.
+    up = signal.resample_poly(data, oversample, 1, axis=0)
+    peak = np.max(np.abs(up))
+    true_peak_db = 20 * np.log10(peak) if peak > 0 else float("-inf")
+
+    return {
+        "path": path,
+        "duration_sec": round(info.frames / sr, 2),
+        "sample_rate": sr,
+        "channels": data.shape[1],
+        "bit_depth": info.subtype,
+        "lufs": None if lufs == float("-inf") else round(lufs, 1),
+        "true_peak_db": None if true_peak_db == float("-inf") else round(true_peak_db, 2),
+    }
+
+
 PRESETS = {
     "streaming": -14.0,
     "club": -8.0,
@@ -212,7 +240,13 @@ def main():
     parser.add_argument("--no-saturation", action="store_true")
     parser.add_argument("--saturation", type=float, default=0.05, help="Saturation amount 0-1 (default 0.05)")
     parser.add_argument("--bit-depth", default="PCM_16", choices=["PCM_16", "PCM_24", "FLOAT"])
+    parser.add_argument("--analyze", action="store_true",
+                         help="Measure LUFS/true-peak/format of 'input' and print JSON, without mastering it")
     args = parser.parse_args()
+
+    if args.analyze:
+        print(json.dumps(analyze_file(args.input)))
+        return
 
     target = args.target if args.target is not None else PRESETS.get(args.format, -14.0)
 
