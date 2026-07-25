@@ -36,6 +36,11 @@ I want to create a fully fledged Electron app
   ```
   Do this before the first `npm start` / `electron .` in a clean checkout or
   after any `npm install` that touches the `electron` package.
+- **Packaged builds (`npm run pack` / `npm run dist`) hit the same Gatekeeper
+  issue.** `scripts/sign-mac.sh` runs automatically as a `postpack`/`postdist`
+  npm hook and ad-hoc re-signs `dist/**/*.app` — no manual step needed. If a
+  packaged app still gets trashed, check the hook actually ran (npm skips
+  `post<script>` hooks if the main script exits non-zero).
 
 ## Token efficiency (priority)
 

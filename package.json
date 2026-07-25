@@ -7,7 +7,9 @@
   "scripts": {
     "start": "electron .",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder"
+    "postpack": "bash scripts/sign-mac.sh",
+    "dist": "electron-builder",
+    "postdist": "bash scripts/sign-mac.sh"
   },
   "author": "",
   "license": "UNLICENSED",
@@ -22,6 +24,9 @@
     "files": [
       "src/**/*",
       "package.json"
+    ],
+    "extraResources": [
+      { "from": "master.py", "to": "master.py" }
     ],
     "mac": {
       "category": "public.app-category.music",

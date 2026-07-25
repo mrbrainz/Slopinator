@@ -20,6 +20,10 @@ All notable changes to this project are documented here. Format is based on
 - Drag-and-drop: drop a folder onto the app to batch-master every
   wav/aiff/flac track in it (output to `<folder>/mastered/`), or drop a
   single file to populate the input picker (#5)
+- `npm run pack`/`npm run dist` produce a macOS distributable
+  (`dist/mac-arm64/Slopinator.app` + `.dmg`), bundling `master.py` as an
+  extra resource and auto ad-hoc-signing via `scripts/sign-mac.sh` so
+  Gatekeeper doesn't trash the packaged app (#6)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global

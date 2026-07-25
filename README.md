@@ -80,6 +80,26 @@ Or set an exact value with `--target -10.5`.
 6. **Dither** — light TPDF dither added automatically when exporting
    to 16-bit.
 
+## Building a distributable (macOS)
+
+```bash
+npm install
+npm run dist        # or `npm run pack` for an unsigned .app without a .dmg
+```
+
+This produces `dist/mac-arm64/Slopinator.app` (+ a `.dmg` for `dist`). A
+`postpack`/`postdist` hook (`scripts/sign-mac.sh`) ad-hoc re-signs the app
+automatically — without it, Gatekeeper trashes it as "malware" the same way
+it does the dev `Electron.app` binary (see `docs/context.md`). Ad-hoc
+signing satisfies Gatekeeper on this machine but isn't notarized, so the
+build isn't yet suitable for handing to other machines.
+
+**Current limitation:** the distributable bundles `master.py` but not a
+Python runtime or its dependencies — it falls back to system `python3`,
+which needs `numpy`/`scipy`/`soundfile`/`pyloudnorm`/`pydub` installed. Fine
+for this dev machine; bundling a real Python runtime (e.g. PyInstaller) is
+tracked in `docs/todos.md`.
+
 ## Known limitations
 
 - The EQ moves are fixed and broad — it doesn't analyze your specific
