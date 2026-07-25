@@ -16,22 +16,34 @@
   </div>
 
   <div class="tabs">
-    <button class="tab" data-screen="library">1 · Library</button>
-    <button class="tab active" data-screen="chain">2 · Chain view</button>
+    <button class="tab active" data-screen="library">1 · Library</button>
+    <button class="tab" data-screen="chain">2 · Chain view</button>
     <button class="tab" data-screen="compare">3 · Compare</button>
     <button class="tab" data-screen="export">4 · Export</button>
   </div>
 
-  <!-- Chain view starts active since it's the only screen with real
-       functionality so far — the other three are placeholders until their
-       own to-dos land (see docs/todos.md). -->
+  <!-- Library is now real; Compare/Export are still placeholders until
+       their own to-dos land (see docs/todos.md). -->
 
-  <div class="screen" id="screen-library">
-    <div class="placeholder">Library — coming soon.</div>
+  <div class="screen active" id="screen-library">
+    <div class="lib-header">
+      <div>
+        <h1>Your tracks</h1>
+        <p id="library-count">0 tracks</p>
+      </div>
+      <button class="btn" id="library-import-btn">+ Import tracks</button>
+    </div>
+
+    <div class="drop-zone" id="library-drop-zone">Drop WAV, AIFF or FLAC files here — or <b>browse your folders</b></div>
+
+    <div class="track-row head">
+      <div></div><div>Track</div><div>Loudness</div><div>Status</div><div>Peak</div>
+    </div>
+    <div id="library-list"></div>
   </div>
 
-  <div class="screen active" id="screen-chain">
-    <div id="drop-zone">
+  <div class="screen" id="screen-chain">
+    <div id="drop-zone" class="drop-zone">
       Drop a folder here to master every track in it, or a single audio file
     </div>
 
@@ -79,5 +91,6 @@
 
 <script src="player.js"></script>
 <script src="renderer.js"></script>
+<script src="library-view.js"></script>
 </body>
 </html>

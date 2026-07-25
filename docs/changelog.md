@@ -54,6 +54,14 @@ All notable changes to this project are documented here. Format is based on
   (load/play/pause/toggle/seekToFraction/isPlaying/onTimeUpdate/onEnded).
   Not wired to any UI yet — foundational for Chain view's waveform and
   Compare's A/B listen buttons (#13)
+- Library screen is now real (`src/renderer/library-view.js`): track rows
+  (status dot, measured loudness/peak, tag) backed by `src/main/library.js`;
+  "+ Import tracks" and drag-drop (files or whole folders, non-audio files
+  skipped) add tracks and auto-analyze them via the new `library-import`
+  IPC handler (expands folders using the same extension-scan pattern as
+  batch mastering); clicking a row switches to Chain view with that
+  track's path pre-selected as the input. Library is now the default
+  active tab (#14)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global
