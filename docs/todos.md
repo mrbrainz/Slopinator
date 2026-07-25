@@ -15,15 +15,11 @@ capability doesn't really support them as-is:
 - The meter ladder → shows the *final* measured values after a run
   completes, not true real-time metering during processing.
 
-1. Save/reuse named chain presets ("Save presets used" in the mockup) —
-   extend `src/main/library.js`'s store to remember a named parameter set a
-   user can reapply to other tracks. Chain view's `params` object
-   (`src/renderer/chain-view.js`) is the natural shape to snapshot/restore.
-   The Export screen deliberately shipped without this button — add it
-   there (and in Chain view) once presets exist.
+(Redesign complete — all four mockup screens are real. New feature ideas
+go here as numbered items.)
 
 ## Distribution
 
-2. Real code signing + notarization (requires an Apple Developer ID
+1. Real code signing + notarization (requires an Apple Developer ID
    certificate — ad-hoc signing only satisfies Gatekeeper on this machine,
    not on a build handed to someone else).

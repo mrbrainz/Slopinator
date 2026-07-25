@@ -468,6 +468,68 @@ dropZone.addEventListener('drop', async (e) => {
   }
 });
 
+// --- named chain presets ---
+// The mockup put "Save presets used" on the Export screen, but the rack
+// params live here — Export already re-uses each track's masteredParams,
+// so saving/applying named chains belongs where the chain is edited.
+
+const presetSelectEl = document.getElementById('preset-select');
+const presetNameEl = document.getElementById('preset-name');
+const presetSaveBtn = document.getElementById('preset-save-btn');
+const presetDeleteBtn = document.getElementById('preset-delete-btn');
+
+function renderPresetOptions(presets, selectedName = '') {
+  presetSelectEl.innerHTML = '';
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = 'Apply preset…';
+  presetSelectEl.appendChild(placeholder);
+
+  presets.forEach((preset) => {
+    const option = document.createElement('option');
+    option.value = preset.name;
+    option.textContent = preset.name;
+    presetSelectEl.appendChild(option);
+  });
+
+  presetSelectEl.value = selectedName;
+  presetDeleteBtn.disabled = !selectedName;
+}
+
+async function refreshPresets(selectedName = '') {
+  renderPresetOptions(await window.slopinator.presetsList(), selectedName);
+}
+
+presetSelectEl.addEventListener('change', async () => {
+  const name = presetSelectEl.value;
+  presetDeleteBtn.disabled = !name;
+  if (!name) return;
+  const preset = (await window.slopinator.presetsList()).find((p) => p.name === name);
+  if (!preset) return;
+  Object.assign(params, preset.params);
+  renderRack();
+  renderDetail();
+});
+
+presetSaveBtn.addEventListener('click', async () => {
+  const name = presetNameEl.value.trim();
+  if (!name) {
+    presetNameEl.focus();
+    return;
+  }
+  const presets = await window.slopinator.presetsSave(name, { ...params });
+  presetNameEl.value = '';
+  renderPresetOptions(presets, name);
+});
+
+presetDeleteBtn.addEventListener('click', async () => {
+  const name = presetSelectEl.value;
+  if (!name) return;
+  const presets = await window.slopinator.presetsDelete(name);
+  renderPresetOptions(presets, '');
+});
+
 renderRack();
 renderDetail();
 updateMeters(null, null);
+refreshPresets();

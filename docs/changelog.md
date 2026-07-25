@@ -97,6 +97,14 @@ All notable changes to this project are documented here. Format is based on
   nothing mid-file, so there's no honest percentage). Format selector
   (WAV 16-bit dithered / WAV 24-bit / FLAC 16-bit) wired to `--bit-depth`
   plus the output extension; new `pick-export-folder` IPC handler (#19)
+- Named chain presets: save the rack's current params under a name, apply
+  or delete saved presets from a bar under the module detail panel in
+  Chain view. Stored in `presets.json` beside `library.json`
+  (`loadPresets`/`savePreset`/`deletePreset` in `src/main/library.js`;
+  `presets-list`/`presets-save`/`presets-delete` IPC). Saving under an
+  existing name overwrites. Lives in Chain view rather than the mockup's
+  Export placement — Export already re-uses per-track `masteredParams`,
+  and the rack being snapshotted is edited here (#20)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global

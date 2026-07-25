@@ -72,4 +72,44 @@ function removeTrack(userDataDir, id) {
   return tracks;
 }
 
-module.exports = { loadLibrary, saveLibrary, addTrack, updateTrack, removeTrack };
+// Named chain presets: a snapshot of Chain view's params object under a
+// user-chosen name, stored in presets.json beside library.json. Saving
+// under an existing name overwrites it.
+
+function presetsFilePath(userDataDir) {
+  return path.join(userDataDir, 'presets.json');
+}
+
+function loadPresets(userDataDir) {
+  const file = presetsFilePath(userDataDir);
+  if (!fs.existsSync(file)) return [];
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch {
+    return [];
+  }
+}
+
+function savePreset(userDataDir, name, params) {
+  const presets = loadPresets(userDataDir).filter((p) => p.name !== name);
+  presets.push({ name, params, savedAt: new Date().toISOString() });
+  fs.writeFileSync(presetsFilePath(userDataDir), JSON.stringify(presets, null, 2));
+  return presets;
+}
+
+function deletePreset(userDataDir, name) {
+  const presets = loadPresets(userDataDir).filter((p) => p.name !== name);
+  fs.writeFileSync(presetsFilePath(userDataDir), JSON.stringify(presets, null, 2));
+  return presets;
+}
+
+module.exports = {
+  loadLibrary,
+  saveLibrary,
+  addTrack,
+  updateTrack,
+  removeTrack,
+  loadPresets,
+  savePreset,
+  deletePreset,
+};

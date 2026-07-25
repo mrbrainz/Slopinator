@@ -482,3 +482,12 @@ select{width:100%;}
 }
 .progress-track{height:5px;background:var(--panel-alt);border-radius:3px;overflow:hidden;}
 .progress-fill{height:100%;background:var(--teal);width:0%;transition:width .2s;}
+
+.preset-bar{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  margin-bottom:22px;
+}
+.preset-bar select{width:auto;flex:0 0 auto;}
+.preset-bar input{flex:1;}
