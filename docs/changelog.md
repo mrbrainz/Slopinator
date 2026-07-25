@@ -36,6 +36,13 @@ All notable changes to this project are documented here. Format is based on
   `library-update`/`library-remove`/`library-analyze` IPC handlers. Not
   wired to any UI yet — foundational for the Library screen in the redesign
   (#10)
+- New app shell: tab navigation (Library / Chain view / Compare / Export)
+  and the `docs/design/mockup.html` visual design system (dark theme, Space
+  Grotesk/Manrope/JetBrains Mono), replacing the single-screen UI. Existing
+  mastering functionality (pickers, preset dropdown, Master button,
+  drag-drop, live log) moved into the Chain view tab, restyled but
+  functionally unchanged; Library/Compare/Export are placeholders until
+  their own to-dos land (#11)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global

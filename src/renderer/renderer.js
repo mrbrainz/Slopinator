@@ -1,6 +1,15 @@
 document.addEventListener('dragover', (e) => e.preventDefault());
 document.addEventListener('drop', (e) => e.preventDefault());
 
+document.querySelectorAll('.tab').forEach((tab) => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+    document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(`screen-${tab.dataset.screen}`).classList.add('active');
+  });
+});
+
 const inputPathEl = document.getElementById('input-path');
 const outputPathEl = document.getElementById('output-path');
 const formatEl = document.getElementById('format');
