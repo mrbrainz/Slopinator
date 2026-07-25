@@ -31,6 +31,11 @@ All notable changes to this project are documented here. Format is based on
 - `master.py --analyze <file>` measures integrated LUFS, oversampled true
   peak, duration, sample rate, channels, and bit depth of an unprocessed
   file and prints it as JSON, without running the mastering chain (#9)
+- Track library data layer (`src/main/library.js`): a JSON store in
+  Electron's `userData` dir, with `library-list`/`library-add`/
+  `library-update`/`library-remove`/`library-analyze` IPC handlers. Not
+  wired to any UI yet — foundational for the Library screen in the redesign
+  (#10)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global

@@ -15,48 +15,45 @@ capability doesn't really support them as-is:
 - The meter ladder → shows the *final* measured values after a run
   completes, not true real-time metering during processing.
 
-1. Track library data layer: local persisted store (Electron `userData`
-   dir) of imported files — path, duration, sample rate/bit depth, import
-   date, status (raw / needs mastering / mastered), last-measured stats.
-   IPC handlers to add/list/update tracks. Nothing persists across runs
-   today.
-2. New app shell: tab navigation (Library / Chain view / Compare / Export)
+1. New app shell: tab navigation (Library / Chain view / Compare / Export)
    and the mockup's visual design system (colors, Space
    Grotesk/Manrope/JetBrains Mono, module-rack look) as shared styles,
    replacing the current single-screen UI.
-3. Waveform peak extraction: decode an audio file down to a peaks array for
+2. Waveform peak extraction: decode an audio file down to a peaks array for
    rendering as bars (real data, not the mockup's random placeholder bars).
-4. In-app audio playback (local file paths) — needed for Chain view's
+3. In-app audio playback (local file paths) — needed for Chain view's
    waveform and Compare's A/B listen buttons. Nothing plays audio today.
-5. Screen 1 — Library: track rows (status dot, measured loudness/peak via
-   `master.py --analyze`, tags) backed by #1; import via file
-   picker/drag-drop (mostly exists) writes into the library; row click
-   opens Chain view for that track.
-6. Screen 2 — Chain view: interactive module rack exposing `master.py`'s
+4. Screen 1 — Library: track rows (status dot, measured loudness/peak,
+   tags) backed by the `library-*` IPC handlers (`src/main/library.js`);
+   import via file picker/drag-drop (mostly exists) adds to the library via
+   `libraryAdd`, then `libraryAnalyze` fills in stats and flips status to
+   `needs_mastering`; row click opens Chain view for that track.
+5. Screen 2 — Chain view: interactive module rack exposing `master.py`'s
    real parameters as clickable modules with an expandable detail panel —
    EQ on/off, mono-bass crossover + bypass, saturation drive + on/off,
    loudness target, limiter ceiling (`--target`/`--ceiling`/`--crossover`/
    `--saturation`/`--no-eq`/`--no-mono-bass`/`--no-saturation`) — replacing
-   today's single format-preset dropdown. Uses #2's shell and #3's
-   waveform.
-7. Meter sidebar showing the real measured LUFS/true-peak/ladder parsed
+   today's single format-preset dropdown. Uses #1's shell and #2's
+   waveform. On a successful master run, `libraryUpdate` the track to
+   `status: 'mastered'` with `masteredPreset`/`masteredAt` set.
+6. Meter sidebar showing the real measured LUFS/true-peak/ladder parsed
    from `master.py`'s post-run output (see scoping note above on what
    "live" means here).
-8. Screen 3 — Compare: before/after cards using `master.py --analyze`'s
-   real original-file stats and #4's real playback, replacing the mockup's
+7. Screen 3 — Compare: before/after cards using `libraryAnalyze`'s real
+   original-file stats and #3's real playback, replacing the mockup's
    static numbers.
-9. Screen 4 — Export: batch export queue reusing the existing
+8. Screen 4 — Export: batch export queue reusing the existing
    drag-and-drop batch logic, with real per-track status parsed from
    `master.py`'s streamed stdout (see scoping note above), and a
    format/bit-depth selector wired to `--bit-depth` + output extension
    (FLAC output already works — `soundfile` infers format from the `.flac`
    extension, confirmed by reading `master_file()`'s `sf.write` call).
-10. Save/reuse named chain presets ("Save presets used" in the mockup) —
-    extend #1's library store to remember a named parameter set a user can
-    reapply to other tracks.
+9. Save/reuse named chain presets ("Save presets used" in the mockup) —
+   extend `src/main/library.js`'s store to remember a named parameter set a
+   user can reapply to other tracks.
 
 ## Distribution
 
-11. Real code signing + notarization (requires an Apple Developer ID
+10. Real code signing + notarization (requires an Apple Developer ID
     certificate — ad-hoc signing only satisfies Gatekeeper on this machine,
     not on a build handed to someone else).

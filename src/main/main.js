@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
+const library = require('./library');
 
 // Packaged builds bundle a PyInstaller-frozen master-bin binary (no system
 // Python required). In dev we run master.py directly via a project-local
@@ -121,6 +122,60 @@ ipcMain.handle('run-master-batch', async (event, { dirPath, format }) => {
     return { success: false, stderr: 'No audio files (wav/aiff/flac) found in that folder.' };
   }
   return { success: allSucceeded, stderr, outdir };
+});
+
+function runMasterAnalyze(filePath) {
+  return new Promise((resolve) => {
+    const proc = spawn(MASTER_CMD, [...MASTER_PREFIX_ARGS, '--analyze', filePath]);
+    let stdout = '';
+    let stderr = '';
+
+    proc.stdout.on('data', (chunk) => {
+      stdout += chunk;
+    });
+    proc.stderr.on('data', (chunk) => {
+      stderr += chunk;
+    });
+    proc.on('error', (err) => resolve({ success: false, error: err.message }));
+    proc.on('close', (code) => {
+      if (code !== 0) {
+        resolve({ success: false, error: stderr.trim() || `exit ${code}` });
+        return;
+      }
+      try {
+        resolve({ success: true, data: JSON.parse(stdout.trim()) });
+      } catch (err) {
+        resolve({ success: false, error: `failed to parse analyze output: ${err.message}` });
+      }
+    });
+  });
+}
+
+const userDataDir = () => app.getPath('userData');
+
+ipcMain.handle('library-list', () => library.loadLibrary(userDataDir()));
+ipcMain.handle('library-add', (_event, filePath) => library.addTrack(userDataDir(), filePath));
+ipcMain.handle('library-update', (_event, { id, patch }) => library.updateTrack(userDataDir(), id, patch));
+ipcMain.handle('library-remove', (_event, id) => library.removeTrack(userDataDir(), id));
+
+ipcMain.handle('library-analyze', async (_event, id) => {
+  const track = library.loadLibrary(userDataDir()).find((t) => t.id === id);
+  if (!track) return { success: false, error: 'track not found' };
+
+  const result = await runMasterAnalyze(track.path);
+  if (!result.success) return result;
+
+  const { duration_sec, sample_rate, channels, bit_depth, lufs, true_peak_db } = result.data;
+  const tracks = library.updateTrack(userDataDir(), id, {
+    durationSec: duration_sec,
+    sampleRate: sample_rate,
+    channels,
+    bitDepth: bit_depth,
+    lufs,
+    truePeakDb: true_peak_db,
+    status: 'needs_mastering',
+  });
+  return { success: true, tracks };
 });
 
 app.whenReady().then(createWindow);
