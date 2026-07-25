@@ -66,7 +66,7 @@ function renderRow(track) {
   row.append(dotEl, nameWrap, meterEl(track.lufs, 'LUFS', warn), tagWrap, meterEl(track.truePeakDb, 'dBTP', warn));
 
   row.addEventListener('click', () => {
-    if (window.selectChainInputAndNavigate) window.selectChainInputAndNavigate(track.path);
+    if (window.selectChainInputAndNavigate) window.selectChainInputAndNavigate(track.path, track.id);
   });
 
   return row;

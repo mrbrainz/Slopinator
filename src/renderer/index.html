@@ -43,6 +43,17 @@
   </div>
 
   <div class="screen" id="screen-chain">
+    <p class="now-mastering" id="chain-track-name">No track selected</p>
+    <p class="now-sub" id="chain-track-sub">Choose a file below, or pick one from your Library.</p>
+
+    <div class="waveform" id="waveform"></div>
+    <div class="chain-transport">
+      <button class="btn ghost" id="play-btn" disabled>&#9656; Play</button>
+    </div>
+
+    <div class="chain" id="module-rack"></div>
+    <div class="mod-detail" id="mod-detail"></div>
+
     <div id="drop-zone" class="drop-zone">
       Drop a folder here to master every track in it, or a single audio file
     </div>
@@ -61,15 +72,6 @@
         <input id="output-path" type="text" readonly placeholder="No output selected" />
         <button class="btn ghost" id="pick-output">Choose…</button>
       </div>
-    </div>
-
-    <div class="field">
-      <label for="format">Loudness preset</label>
-      <select id="format">
-        <option value="streaming">Streaming (-14 LUFS)</option>
-        <option value="soundcloud">SoundCloud (-11 LUFS)</option>
-        <option value="club">Club (-8 LUFS)</option>
-      </select>
     </div>
 
     <button class="btn" id="master-btn" disabled>Master</button>
@@ -91,6 +93,7 @@
 
 <script src="player.js"></script>
 <script src="renderer.js"></script>
+<script src="chain-view.js"></script>
 <script src="library-view.js"></script>
 </body>
 </html>
