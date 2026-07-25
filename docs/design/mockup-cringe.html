@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CHAIN.EXE — ULTRA MASTER 9000</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --hotpink:#ff2fb5;
+    --lime:#c6ff1f;
+    --cyan:#25e9ff;
+    --purple:#9b30ff;
+    --yellow:#ffe600;
+    --orange:#ff8a00;
+    --text:#1a0033;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Comic Neue', cursive;
+    color:var(--text);
+    background:
+      radial-gradient(circle at 10% 10%, #ffe600 0%, transparent 35%),
+      radial-gradient(circle at 90% 20%, #25e9ff 0%, transparent 40%),
+      radial-gradient(circle at 30% 90%, #ff2fb5 0%, transparent 40%),
+      radial-gradient(circle at 80% 85%, #c6ff1f 0%, transparent 35%),
+      linear-gradient(135deg,#9b30ff,#ff2fb5 40%,#ff8a00 70%,#ffe600);
+    background-attachment:fixed;
+  }
+  .app-frame{
+    max-width:1180px;
+    margin:0 auto;
+    padding:16px 20px 60px;
+  }
+
+  marquee{
+    background:#000;
+    color:var(--lime);
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    padding:8px 0;
+    font-size:14px;
+    border:3px solid var(--hotpink);
+    border-radius:8px;
+    margin-bottom:14px;
+  }
+
+  .titlebar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:#fff;
+    border:5px solid var(--text);
+    border-radius:16px;
+    padding:14px 22px;
+    margin-bottom:18px;
+    box-shadow:8px 8px 0 var(--text);
+    transform:rotate(-1deg);
+  }
+  .brand{
+    font-family:'Bangers', cursive;
+    font-size:34px;
+    letter-spacing:0.03em;
+    background:linear-gradient(90deg,var(--hotpink),var(--orange),var(--yellow),var(--lime),var(--cyan),var(--purple),var(--hotpink));
+    background-size:300% 100%;
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    animation:rainbow 3s linear infinite;
+  }
+  @keyframes rainbow{ to{ background-position:300% 0; } }
+  .badge-new{
+    font-family:'Bangers',cursive;
+    background:var(--yellow);
+    border:3px solid var(--text);
+    border-radius:8px;
+    padding:4px 12px;
+    font-size:14px;
+    transform:rotate(4deg);
+    animation:blink 1s steps(1) infinite;
+  }
+  @keyframes blink{ 50%{ opacity:0.35; } }
+  .emoji-spin{display:inline-block;animation:spin 2.2s linear infinite;}
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .wiggle{animation:wiggle 0.6s ease-in-out infinite;display:inline-block;}
+  @keyframes wiggle{ 0%,100%{transform:rotate(-6deg);} 50%{transform:rotate(6deg);} }
+
+  .tabs{ display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+  .tab{
+    font-family:'Bangers',cursive;
+    font-size:18px;
+    letter-spacing:0.02em;
+    color:var(--text);
+    background:#fff;
+    border:4px solid var(--text);
+    padding:8px 18px;
+    cursor:pointer;
+    border-radius:10px;
+    box-shadow:4px 4px 0 var(--text);
+    transform:rotate(-2deg);
+  }
+  .tab:nth-child(2){transform:rotate(1.5deg);}
+  .tab:nth-child(3){transform:rotate(-1deg);}
+  .tab:nth-child(4){transform:rotate(2deg);}
+  .tab.active{background:var(--lime);transform:translateY(-3px) rotate(0deg);}
+  .tab:hover{background:var(--cyan);}
+
+  .screen{display:none;}
+  .screen.active{display:block;}
+
+  .panel{
+    background:#fff;
+    border:5px solid var(--text);
+    border-radius:18px;
+    padding:22px;
+    box-shadow:10px 10px 0 var(--text);
+    margin-bottom:22px;
+  }
+
+  h1.mega{
+    font-family:'Bangers',cursive;
+    font-size:40px;
+    margin:0 0 4px;
+    color:var(--hotpink);
+    -webkit-text-stroke:2px var(--text);
+    transform:rotate(-1deg);
+  }
+  .sub{font-weight:700;font-size:14px;}
+
+  .btn{
+    font-family:'Bangers',cursive;
+    font-size:16px;
+    letter-spacing:0.02em;
+    background:var(--yellow);
+    color:var(--text);
+    border:4px solid var(--text);
+    padding:12px 20px;
+    border-radius:12px;
+    cursor:pointer;
+    box-shadow:5px 5px 0 var(--text);
+  }
+  .btn:active{transform:translate(3px,3px);box-shadow:2px 2px 0 var(--text);}
+  .btn.pink{background:var(--hotpink);color:#fff;}
+  .btn.cyan{background:var(--cyan);}
+  .btn.lime{background:var(--lime);}
+
+  .drop-zone{
+    border:4px dashed var(--purple);
+    border-radius:16px;
+    padding:34px;
+    text-align:center;
+    font-family:'Bangers',cursive;
+    font-size:20px;
+    color:var(--purple);
+    margin-bottom:22px;
+    background:repeating-linear-gradient(45deg,#fff,#fff 10px,#f5f0ff 10px,#f5f0ff 20px);
+  }
+
+  .track-row{
+    display:grid;
+    grid-template-columns:34px 1fr 110px 150px 90px;
+    align-items:center;
+    gap:14px;
+    padding:12px 10px;
+    border-bottom:3px dotted var(--purple);
+    font-weight:700;
+  }
+  .status-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--text);}
+  .status-dot.done{background:var(--lime);}
+  .status-dot.needs{background:var(--orange);animation:blink 0.8s steps(1) infinite;}
+  .status-dot.raw{background:#ccc;}
+  .track-name{font-family:'Bangers',cursive;font-size:16px;}
+  .track-sub{font-size:12px;color:#555;}
+  .fire-meter{font-size:16px;letter-spacing:2px;}
+  .tag{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    background:var(--text);
+    color:var(--lime);
+    padding:4px 8px;
+    border-radius:6px;
+    display:inline-block;
+    transform:rotate(-2deg);
+  }
+
+  .waveform{
+    height:90px;
+    background:repeating-linear-gradient(90deg,var(--hotpink),var(--orange) 10%,var(--yellow) 20%,var(--lime) 30%,var(--cyan) 40%,var(--purple) 50%);
+    border:4px solid var(--text);
+    border-radius:14px;
+    margin-bottom:22px;
+    overflow:hidden;
+    animation:slidebg 6s linear infinite;
+    background-size:200% 100%;
+  }
+  @keyframes slidebg{ to{ background-position:-200% 0; } }
+
+  .chain{ display:flex; gap:16px; margin-bottom:22px; overflow-x:auto; padding-bottom:10px; }
+  .module{
+    background:#fff;
+    border:4px solid var(--text);
+    border-radius:14px;
+    min-width:140px;
+    padding:14px 12px;
+    cursor:pointer;
+    box-shadow:5px 5px 0 var(--text);
+    text-align:center;
+  }
+  .module.active{background:var(--yellow);transform:translateY(-4px) rotate(-2deg);}
+  .mod-emoji{font-size:26px;display:block;margin-bottom:6px;}
+  .mod-name{font-family:'Bangers',cursive;font-size:15px;}
+  .mod-val{font-family:'JetBrains Mono',monospace;font-size:10px;color:#555;}
+
+  .mod-detail h3{ font-family:'Bangers',cursive; font-size:20px; color:var(--hotpink); margin:0 0 16px; }
+  .slider-row{display:flex;align-items:center;gap:14px;margin-bottom:16px;font-weight:700;font-size:12px;}
+  .slider-row label{width:120px;font-family:'JetBrains Mono',monospace;font-size:11px;}
+  .slider-track{flex:1;height:10px;background:#eee;border:3px solid var(--text);border-radius:6px;position:relative;}
+  .slider-fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--hotpink),var(--yellow));border-radius:6px 0 0 6px;}
+  .slider-handle{width:22px;height:22px;border-radius:50%;background:var(--lime);border:3px solid var(--text);position:absolute;top:50%;transform:translate(-50%,-50%);}
+  .slider-num{font-family:'JetBrains Mono',monospace;width:60px;text-align:right;}
+
+  .airhorn{
+    display:inline-block;
+    margin-top:6px;
+    font-family:'Bangers',cursive;
+    font-size:18px;
+    background:var(--orange);
+    border:4px solid var(--text);
+    padding:10px 20px;
+    border-radius:50px;
+    box-shadow:5px 5px 0 var(--text);
+    cursor:pointer;
+  }
+
+  .meter-panel{background:#fff;border:5px solid var(--text);border-radius:18px;padding:20px;box-shadow:8px 8px 0 var(--text);}
+  .meter-panel h4{font-family:'Bangers',cursive;font-size:16px;margin:0 0 12px;color:var(--purple);}
+  .big-reading{ font-family:'Bangers',cursive; font-size:44px; color:var(--hotpink); -webkit-text-stroke:2px var(--text); line-height:1; }
+  .big-reading small{font-size:16px;-webkit-text-stroke:0;color:var(--text);}
+  .reading-label{font-weight:700;font-size:11px;margin:6px 0 16px;}
+  .ladder{display:flex;flex-direction:column-reverse;gap:4px;margin-bottom:16px;}
+  .rung{height:10px;border-radius:3px;background:#eee;border:2px solid var(--text);}
+  .rung.lit-lime{background:var(--lime);}
+  .rung.lit-yellow{background:var(--yellow);}
+  .rung.lit-red{background:#ff2020;}
+
+  .ab-toggle{display:flex;background:#eee;border:3px solid var(--text);border-radius:10px;padding:3px;margin-top:8px;}
+  .ab-toggle button{flex:1;background:none;border:none;font-family:'Bangers',cursive;font-size:14px;padding:8px 0;border-radius:8px;cursor:pointer;}
+  .ab-toggle button.on{background:var(--lime);}
+
+  .preset-row{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+  .chip{font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 12px;border-radius:20px;border:2px solid var(--text);background:#fff;cursor:pointer;font-weight:700;}
+  .chip.on{background:var(--cyan);}
+
+  .bottom-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:10px;}
+
+  .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
+  .compare-card{background:#fff;border:5px solid var(--text);border-radius:16px;padding:20px;box-shadow:6px 6px 0 var(--text);}
+  .compare-card.after{border-color:var(--hotpink);background:#fff7fb;}
+  .compare-card h4{font-family:'Bangers',cursive;font-size:20px;margin:0 0 6px;}
+  .compare-card.after h4{color:var(--hotpink);}
+  .compare-wave{height:60px;border-radius:10px;margin:14px 0;border:3px solid var(--text);background:repeating-linear-gradient(90deg,#ccc,#ccc 6px,#ddd 6px,#ddd 12px);}
+  .compare-card.after .compare-wave{background:repeating-linear-gradient(90deg,var(--hotpink),var(--orange) 6px,var(--yellow) 12px,var(--lime) 18px);}
+  .stat-line{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:12px;padding:6px 0;border-top:2px dotted #ccc;font-weight:700;}
+  .stat-line b{color:var(--text);}
+  .compare-card.after .stat-line b{color:var(--hotpink);}
+  .listen-btn{width:100%;margin-top:14px;background:var(--cyan);border:3px solid var(--text);font-family:'Bangers',cursive;font-size:14px;padding:10px;border-radius:10px;cursor:pointer;}
+
+  .export-row{display:grid;grid-template-columns:1fr 130px 110px 100px;align-items:center;gap:14px;padding:12px 10px;border-bottom:3px dotted var(--purple);font-weight:700;font-size:13px;}
+  .export-row.head{font-family:'Bangers',cursive;font-size:14px;color:var(--purple);}
+  .progress-track{height:12px;background:#eee;border:2px solid var(--text);border-radius:6px;overflow:hidden;}
+  .progress-fill{height:100%;background:repeating-linear-gradient(45deg,var(--lime),var(--lime) 6px,var(--cyan) 6px,var(--cyan) 12px);}
+  .format-select{background:#fff;border:3px solid var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;padding:8px 10px;border-radius:8px;margin-bottom:18px;font-weight:700;}
+
+  .caption{ font-family:'Bangers',cursive; font-size:15px; text-align:center; color:#fff; text-shadow:2px 2px 0 var(--text); margin-top:30px; }
+  .confetti{position:fixed;top:-20px;font-size:20px;animation:fall linear infinite;pointer-events:none;z-index:0;}
+  @keyframes fall{ to{ transform:translateY(110vh) rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="app-frame">
+
+  <marquee behavior="scroll" scrollamount="6">WELCOME TO CHAIN.EXE — THE ONLY MASTERING APP YOUR MOM WARNED YOU ABOUT — NOW WITH 300% MORE LOUDNESS (probably fake)</marquee>
+
+  <div class="titlebar">
+    <div class="brand">CHAIN.EXE</div>
+    <div class="badge-new">NEW: AIRHORN LIMITER</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-screen="s1">LIBRARY</button>
+    <button class="tab" data-screen="s2">CHAIN GO BRRR</button>
+    <button class="tab" data-screen="s3">BEFORE VS AFTER</button>
+    <button class="tab" data-screen="s4">YEET TO EXPORT</button>
+  </div>
+
+  <div class="screen active" id="s1">
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:18px;flex-wrap:wrap;gap:12px;">
+        <div>
+          <h1 class="mega">yOuR tRaCkS <span class="wiggle">[!]</span></h1>
+          <p class="sub">7 bangers - 2 are still mid (need mastering)</p>
+        </div>
+        <button class="btn pink">+ IMPORT (let's gooo)</button>
+      </div>
+
+      <div class="drop-zone">drag ur WAV here or it stays mid forever</div>
+
+      <div class="track-row" style="font-family:'Bangers',cursive;font-size:12px;color:var(--purple);border-bottom:3px solid var(--text);">
+        <div></div><div>TRACK</div><div>LOUD-O-METER</div><div>STATUS</div><div>PEAK</div>
+      </div>
+
+      <div class="track-row">
+        <div class="status-dot done"></div>
+        <div><div class="track-name">Midnight Run (VIP Edit)</div><div class="track-sub">4:32 - certified banger</div></div>
+        <div class="fire-meter">HOT HOT HOT HOT</div>
+        <div><span class="tag">MASTERED - CLUB</span></div>
+        <div>-1.0</div>
+      </div>
+      <div class="track-row">
+        <div class="status-dot needs"></div>
+        <div><div class="track-name">Low End Theory</div><div class="track-sub">6:10 - kinda mid rn</div></div>
+        <div class="fire-meter">HOT</div>
+        <div><span class="tag">NEEDS MASTERING</span></div>
+        <div>-4.2</div>
+      </div>
+      <div class="track-row">
+        <div class="status-dot done"></div>
+        <div><div class="track-name">Rooftop Sunrise</div><div class="track-sub">5:47 - slaps fr fr</div></div>
+        <div class="fire-meter">HOT HOT HOT</div>
+        <div><span class="tag">MASTERED - SOUNDCLOUD</span></div>
+        <div>-1.0</div>
+      </div>
+      <div class="track-row">
+        <div class="status-dot raw"></div>
+        <div><div class="track-name">untitled_bounce_04</div><div class="track-sub">3:58 - unrated, could be mid</div></div>
+        <div class="fire-meter">???</div>
+        <div><span class="tag">RAW IMPORT</span></div>
+        <div>???</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="s2">
+    <div class="panel">
+      <h1 class="mega">Low End Theory <span class="emoji-spin">[~]</span></h1>
+      <p class="sub">6:10 - currently mid - about to NOT be mid</p>
+
+      <div class="waveform"></div>
+
+      <div class="chain">
+        <div class="module"><span class="mod-emoji">EQ</span><div class="mod-name">EQ</div><div class="mod-val">-1 / -0.5 / +0.5dB</div></div>
+        <div class="module active"><span class="mod-emoji">||</span><div class="mod-name">MONO BASS</div><div class="mod-val">below 120Hz</div></div>
+        <div class="module"><span class="mod-emoji">~</span><div class="mod-name">SATURATION</div><div class="mod-val">5% butter</div></div>
+        <div class="module"><span class="mod-emoji">^</span><div class="mod-name">LOUDNESS</div><div class="mod-val">target -8 LUFS</div></div>
+        <div class="module"><span class="mod-emoji">#</span><div class="mod-name">LIMITER</div><div class="mod-val">ceiling -1.0dBTP</div></div>
+      </div>
+
+      <div class="mod-detail">
+        <h3>MONO BASS -- currently selected, no cap</h3>
+        <div class="slider-row">
+          <label>CROSSOVER</label>
+          <div class="slider-track"><div class="slider-fill" style="width:40%"></div><div class="slider-handle" style="left:40%"></div></div>
+          <div class="slider-num">120 Hz</div>
+        </div>
+        <div class="slider-row">
+          <label>BYPASS</label>
+          <div class="ab-toggle" style="max-width:150px;">
+            <button class="on">ON fr</button><button>OFF</button>
+          </div>
+        </div>
+        <div class="airhorn">AIRHORN.WAV</div>
+      </div>
+    </div>
+
+    <div class="panel meter-panel" style="max-width:340px;">
+      <h4>VIBE METER</h4>
+      <div class="big-reading">-8.0<small> LUFS</small></div>
+      <div class="reading-label">loudness go brrr</div>
+      <div class="ladder">
+        <div class="rung lit-red"></div>
+        <div class="rung lit-yellow"></div>
+        <div class="rung lit-yellow"></div>
+        <div class="rung lit-lime"></div>
+        <div class="rung lit-lime"></div>
+        <div class="rung lit-lime"></div>
+        <div class="rung lit-lime"></div>
+        <div class="rung"></div>
+        <div class="rung"></div>
+        <div class="rung"></div>
+      </div>
+      <div class="ab-toggle">
+        <button class="on">A (mid)</button><button>B (fire)</button>
+      </div>
+      <div class="preset-row">
+        <div class="chip on">CLUB</div>
+        <div class="chip">STREAM</div>
+        <div class="chip">SOUNDCLOUD</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="s3">
+    <div class="panel">
+      <h1 class="mega">POV: before vs after</h1>
+      <p class="sub">tap a card to listen. no cap this time.</p>
+
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h4>ORIGINAL (mid)</h4>
+          <div class="compare-wave"></div>
+          <div class="stat-line"><span>Loudness</span><b>-15.8 LUFS</b></div>
+          <div class="stat-line"><span>True peak</span><b>-4.2 dBTP</b></div>
+          <div class="stat-line"><span>Bass</span><b>unlinked</b></div>
+          <button class="listen-btn">listen to the mid version</button>
+        </div>
+        <div class="compare-card after">
+          <h4>MASTERED (fire)</h4>
+          <div class="compare-wave"></div>
+          <div class="stat-line"><span>Loudness</span><b>-8.0 LUFS</b></div>
+          <div class="stat-line"><span>True peak</span><b>-1.0 dBTP</b></div>
+          <div class="stat-line"><span>Bass</span><b>mono, locked in</b></div>
+          <button class="listen-btn" style="background:var(--hotpink);color:#fff;">LISTEN TO THE HEAT</button>
+        </div>
+      </div>
+      <div class="bottom-actions">
+        <button class="btn cyan">tweak it more</button>
+        <button class="btn pink">IT SLAPS -- EXPORT</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="s4">
+    <div class="panel">
+      <h1 class="mega">yeet to export</h1>
+      <p class="sub">2 tracks in the oven</p>
+
+      <select class="format-select">
+        <option>WAV - 16-bit - dithered (fancy)</option>
+        <option>WAV - 24-bit (chonky)</option>
+        <option>FLAC - 16-bit (lossless flex)</option>
+      </select>
+
+      <div class="export-row head"><div>TRACK</div><div>TARGET</div><div>PROGRESS</div><div>MOOD</div></div>
+      <div class="export-row">
+        <div class="track-name">Low End Theory</div>
+        <div>-8 LUFS</div>
+        <div class="progress-track"><div class="progress-fill" style="width:100%"></div></div>
+        <div>done</div>
+      </div>
+      <div class="export-row">
+        <div class="track-name">untitled_bounce_04</div>
+        <div>-14 LUFS</div>
+        <div class="progress-track"><div class="progress-fill" style="width:62%"></div></div>
+        <div>cooking</div>
+      </div>
+
+      <div class="bottom-actions">
+        <button class="btn cyan">export to folder</button>
+        <button class="btn lime">save this preset (it's fire)</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="caption">this is a mockup. no actual airhorns were harmed.</div>
+</div>
+
+<script>
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById(t.dataset.screen).classList.add('active');
+    });
+  });
+
+  const emojis = ['*','!','~','^','#','+'];
+  for(let i=0;i<22;i++){
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    c.style.left = Math.random()*100 + 'vw';
+    c.style.color = ['#ff2fb5','#25e9ff','#ffe600','#c6ff1f','#9b30ff'][Math.floor(Math.random()*5)];
+    c.style.animationDuration = (4 + Math.random()*5) + 's';
+    c.style.animationDelay = (Math.random()*5) + 's';
+    document.body.appendChild(c);
+  }
+</script>
+</body>
+</html>

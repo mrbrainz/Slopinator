@@ -4,15 +4,32 @@
   <meta charset="UTF-8" />
   <title>Slopinator</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Bangers&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="cringe.css" />
 </head>
 <body>
 <div class="app-frame">
 
+  <marquee id="cringe-marquee" behavior="scroll" scrollamount="6">WELCOME TO SLOPINATOR.EXE — THE ONLY MASTERING APP YOUR MOM WARNED YOU ABOUT — NOW WITH 300% MORE LOUDNESS (probably fake)</marquee>
+
   <div class="titlebar">
     <div class="dot"></div><div class="dot"></div><div class="dot"></div>
     <div class="brand">slopinator<span>.</span></div>
+    <div class="badge-new" id="cringe-badge">NEW: AIRHORN LIMITER</div>
+    <div class="settings-wrap">
+      <button class="settings-btn" id="settings-btn" title="Settings">&#9881;</button>
+      <div class="settings-menu" id="settings-menu" hidden>
+        <h5>Settings</h5>
+        <div class="settings-row">
+          <span class="settings-label">Mode</span>
+          <div class="ab-toggle mode-toggle">
+            <button id="mode-normal">Normal</button>
+            <button id="mode-cringe">Cringe</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="tabs">
@@ -168,5 +185,6 @@
 <script src="library-view.js"></script>
 <script src="compare-view.js"></script>
 <script src="export-view.js"></script>
+<script src="settings.js"></script>
 </body>
 </html>

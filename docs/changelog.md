@@ -105,6 +105,13 @@ All notable changes to this project are documented here. Format is based on
   existing name overwrites. Lives in Chain view rather than the mockup's
   Export placement — Export already re-uses per-track `masteredParams`,
   and the rack being snapshotted is edited here (#20)
+- Settings menu (gear in the titlebar) with one option: UI mode, "Normal"
+  or "Cringe" (`docs/design/mockup-cringe.html`). Cringe mode is purely
+  cosmetic — `src/renderer/cringe.css` restyles everything under a
+  `body.cringe` class (largely by redefining the design-system CSS
+  variables), and `src/renderer/settings.js` swaps static labels, shows a
+  marquee + blinking badge, and rains confetti. Same DOM, so every screen
+  works identically in both modes. Persisted in `localStorage` (#21)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global
