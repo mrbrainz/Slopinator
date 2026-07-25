@@ -17,6 +17,9 @@ All notable changes to this project are documented here. Format is based on
   to plain `python3` (#3)
 - Live mastering progress log in the UI, streamed from `master.py`'s
   stdout/stderr as it runs (#4)
+- Drag-and-drop: drop a folder onto the app to batch-master every
+  wav/aiff/flac track in it (output to `<folder>/mastered/`), or drop a
+  single file to populate the input picker (#5)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global
