@@ -72,6 +72,12 @@ All notable changes to this project are documented here. Format is based on
   via `window.player` with live playhead highlighting. On a successful
   master run of a track opened from the Library, `libraryUpdate`s it to
   `status: 'mastered'` with the preset (if any) and timestamp (#15)
+- Meter sidebar in Chain view: integrated LUFS reading and a 10-rung true
+  peak ladder (teal/amber/red zones), parsed from `master.py`'s own
+  "Done. Final: ..." line after a completed single-file run. Shows the
+  *final* measured values, not live metering during processing. Widened
+  the app window (980×720) and `.app-frame` (860px) to fit the new
+  two-column Chain view layout (#16)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global
@@ -80,6 +86,9 @@ All notable changes to this project are documented here. Format is based on
   (target/ceiling/crossover/saturationAmount/eq/monoBass/saturation)
   instead of a single `format` string, to carry the rack's full parameter
   set (#15)
+- `run-master`'s result now includes `finalLufs`/`finalTruePeakDb`, parsed
+  from the run's own stdout server-side, instead of leaving log-scraping
+  to the renderer (#16)
 
 ### Fixed
 - `master.py` now line-buffers stdout explicitly

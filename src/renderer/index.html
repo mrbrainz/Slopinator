@@ -46,38 +46,50 @@
     <p class="now-mastering" id="chain-track-name">No track selected</p>
     <p class="now-sub" id="chain-track-sub">Choose a file below, or pick one from your Library.</p>
 
-    <div class="waveform" id="waveform"></div>
-    <div class="chain-transport">
-      <button class="btn ghost" id="play-btn" disabled>&#9656; Play</button>
-    </div>
+    <div class="chain-layout">
+      <div class="chain-main">
+        <div class="waveform" id="waveform"></div>
+        <div class="chain-transport">
+          <button class="btn ghost" id="play-btn" disabled>&#9656; Play</button>
+        </div>
 
-    <div class="chain" id="module-rack"></div>
-    <div class="mod-detail" id="mod-detail"></div>
+        <div class="chain" id="module-rack"></div>
+        <div class="mod-detail" id="mod-detail"></div>
 
-    <div id="drop-zone" class="drop-zone">
-      Drop a folder here to master every track in it, or a single audio file
-    </div>
+        <div id="drop-zone" class="drop-zone">
+          Drop a folder here to master every track in it, or a single audio file
+        </div>
 
-    <div class="field">
-      <label>Input file</label>
-      <div class="row">
-        <input id="input-path" type="text" readonly placeholder="No file selected" />
-        <button class="btn ghost" id="pick-input">Choose…</button>
+        <div class="field">
+          <label>Input file</label>
+          <div class="row">
+            <input id="input-path" type="text" readonly placeholder="No file selected" />
+            <button class="btn ghost" id="pick-input">Choose…</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Output file</label>
+          <div class="row">
+            <input id="output-path" type="text" readonly placeholder="No output selected" />
+            <button class="btn ghost" id="pick-output">Choose…</button>
+          </div>
+        </div>
+
+        <button class="btn" id="master-btn" disabled>Master</button>
+
+        <p id="status"></p>
+        <pre id="log"></pre>
+      </div>
+
+      <div class="meter-panel">
+        <h4>Master output</h4>
+        <div class="big-reading" id="meter-lufs">—<small> LUFS</small></div>
+        <div class="reading-label">Integrated loudness</div>
+        <div class="ladder" id="meter-ladder"></div>
+        <div class="reading-label" id="meter-peak-label">True peak: —</div>
       </div>
     </div>
-
-    <div class="field">
-      <label>Output file</label>
-      <div class="row">
-        <input id="output-path" type="text" readonly placeholder="No output selected" />
-        <button class="btn ghost" id="pick-output">Choose…</button>
-      </div>
-    </div>
-
-    <button class="btn" id="master-btn" disabled>Master</button>
-
-    <p id="status"></p>
-    <pre id="log"></pre>
   </div>
 
   <div class="screen" id="screen-compare">

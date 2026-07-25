@@ -14,6 +14,9 @@ const waveformEl = document.getElementById('waveform');
 const playBtn = document.getElementById('play-btn');
 const rackEl = document.getElementById('module-rack');
 const detailEl = document.getElementById('mod-detail');
+const meterLufsEl = document.getElementById('meter-lufs');
+const meterLadderEl = document.getElementById('meter-ladder');
+const meterPeakLabelEl = document.getElementById('meter-peak-label');
 
 let inputPath = null;
 let outputPath = null;
@@ -252,6 +255,38 @@ function renderDetail() {
   mod.renderDetail(detailEl);
 }
 
+// --- meter sidebar: shows the *final* measured values from the last
+// completed run, parsed from master.py's own "Done. Final: ..." line, not
+// true real-time metering during processing. ---
+
+const LADDER_RUNGS = 10;
+const LADDER_RANGE_DB = 20; // rungs span -20dBTP (bottom) to 0dBTP (top)
+
+function renderLadder(truePeakDb) {
+  meterLadderEl.innerHTML = '';
+  const litCount =
+    truePeakDb == null
+      ? 0
+      : Math.max(0, Math.min(LADDER_RUNGS, Math.round(((truePeakDb + LADDER_RANGE_DB) / LADDER_RANGE_DB) * LADDER_RUNGS)));
+
+  for (let i = 0; i < LADDER_RUNGS; i++) {
+    const rung = document.createElement('div');
+    rung.className = 'rung';
+    if (i < litCount) {
+      if (i >= LADDER_RUNGS - 1) rung.classList.add('lit-red'); // top rung: 0 to -2dBTP
+      else if (i >= LADDER_RUNGS - 3) rung.classList.add('lit-amber'); // next 2: -2 to -6dBTP
+      else rung.classList.add('lit-teal');
+    }
+    meterLadderEl.appendChild(rung);
+  }
+}
+
+function updateMeters(lufs, truePeakDb) {
+  meterLufsEl.innerHTML = (lufs == null ? '—' : lufs.toFixed(1)) + '<small> LUFS</small>';
+  meterPeakLabelEl.textContent = `True peak: ${truePeakDb == null ? '—' : `${truePeakDb.toFixed(2)} dBTP`}`;
+  renderLadder(truePeakDb);
+}
+
 // --- waveform + playback ---
 
 async function loadWaveform(path) {
@@ -312,6 +347,7 @@ function selectChainInput(path, trackId = null) {
   chainTrackNameEl.textContent = path.split('/').pop();
   chainTrackSubEl.textContent = path;
   loadWaveform(path);
+  updateMeters(null, null);
   updateMasterButton();
 }
 
@@ -364,6 +400,10 @@ masterBtn.addEventListener('click', () => {
         ? `Done: ${outputPath}`
         : `Failed (exit ${result.code}): ${result.stderr.trim() || 'unknown error'}`;
 
+      if (result.success) {
+        updateMeters(result.finalLufs, result.finalTruePeakDb);
+      }
+
       if (result.success && trackIdAtRunStart) {
         await window.slopinator.libraryUpdate(trackIdAtRunStart, {
           status: 'mastered',
@@ -414,3 +454,4 @@ dropZone.addEventListener('drop', async (e) => {
 
 renderRack();
 renderDetail();
+updateMeters(null, null);

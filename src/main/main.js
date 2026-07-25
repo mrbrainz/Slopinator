@@ -21,8 +21,8 @@ if (app.isPackaged) {
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 980,
+    height: 720,
     webPreferences: {
       preload: path.join(__dirname, '../preload/preload.js'),
       contextIsolation: true,
@@ -58,10 +58,13 @@ function runMasterPy(scriptArgs, sender) {
 
   return new Promise((resolve) => {
     const proc = spawn(MASTER_CMD, [...MASTER_PREFIX_ARGS, ...scriptArgs]);
+    let stdout = '';
     let stderr = '';
 
     proc.stdout.on('data', (chunk) => {
-      sendLog('stdout', chunk.toString());
+      const text = chunk.toString();
+      stdout += text;
+      sendLog('stdout', text);
     });
     proc.stderr.on('data', (chunk) => {
       stderr += chunk;
@@ -74,7 +77,16 @@ function runMasterPy(scriptArgs, sender) {
       resolve({ success: false, stderr });
     });
     proc.on('close', (code) => {
-      resolve({ success: code === 0, code, stderr });
+      // Only meaningful for a single-file run — batch mode prints one such
+      // line per file, so this just reflects the last one processed.
+      const match = stdout.match(/Done\. Final: (-?[\d.]+) LUFS, (-?[\d.]+) dBTP/);
+      resolve({
+        success: code === 0,
+        code,
+        stderr,
+        finalLufs: match ? parseFloat(match[1]) : null,
+        finalTruePeakDb: match ? parseFloat(match[2]) : null,
+      });
     });
   });
 }
