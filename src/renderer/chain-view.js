@@ -364,7 +364,6 @@ window.selectChainInputAndNavigate = (path, trackId) => {
 };
 
 window.getCurrentChainTrack = () => ({ trackId: currentTrackId, path: inputPath });
-window.getChainParams = () => ({ ...params });
 
 document.getElementById('pick-input').addEventListener('click', async () => {
   const picked = await window.slopinator.pickInputFile();

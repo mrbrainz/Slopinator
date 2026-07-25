@@ -1,9 +1,13 @@
 // Export screen: batch-export every analyzed library track to a chosen
 // folder. Each track re-runs master.py with the exact params it was
-// mastered with in Chain view (masteredParams), falling back to the
-// rack's current settings for tracks never mastered there. Progress is
-// stepped (queued / rendering / done) — master.py reports nothing
-// mid-file, so there's no honest percentage to show (docs/todos.md).
+// mastered with in Chain view (masteredParams); tracks never mastered
+// there fall back to fixed defaults (master.py's own defaults, not
+// whatever happens to be currently sitting in Chain view's rack — that
+// would silently apply one track's leftover settings to an unrelated
+// track). The queue row says "(default)" for that case so it's not
+// mistaken for a real per-track choice. Progress is stepped
+// (queued / rendering / done) — master.py reports nothing mid-file, so
+// there's no honest percentage to show (docs/todos.md).
 
 const exportCountEl = document.getElementById('export-count');
 const exportEmptyEl = document.getElementById('export-empty');
@@ -20,17 +24,30 @@ const EXPORT_FORMATS = {
 
 const EXPORT_PRESETS = { '-14': 'streaming', '-11': 'soundcloud', '-8': 'club' };
 
+// master.py's own defaults (matches src/renderer/chain-view.js's initial
+// params) — used only for tracks that were never mastered in Chain view.
+const DEFAULT_EXPORT_PARAMS = {
+  eq: true,
+  monoBass: true,
+  crossover: 120,
+  saturation: true,
+  saturationAmount: 0.05,
+  target: -14,
+  ceiling: -1.0,
+};
+
 let exportQueue = [];
 let isExporting = false;
 
 function trackExportParams(track) {
-  return track.masteredParams || (window.getChainParams ? window.getChainParams() : {});
+  return track.masteredParams || DEFAULT_EXPORT_PARAMS;
 }
 
 function targetLabel(track) {
-  const target = trackExportParams(track).target ?? -14;
-  const preset = EXPORT_PRESETS[String(target)];
-  return `${target} LUFS${preset ? ` ${preset}` : ''}`;
+  const params = trackExportParams(track);
+  const preset = EXPORT_PRESETS[String(params.target)];
+  const label = `${params.target} LUFS${preset ? ` ${preset}` : ''}`;
+  return track.masteredParams ? label : `${label} (default)`;
 }
 
 function setRowState(row, state) {

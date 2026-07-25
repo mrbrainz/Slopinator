@@ -116,4 +116,8 @@ libraryDropZone.addEventListener('drop', (e) => {
   importPaths(paths);
 });
 
+document.addEventListener('screen-activated', (e) => {
+  if (e.detail.screen === 'library') refreshLibrary();
+});
+
 refreshLibrary();
