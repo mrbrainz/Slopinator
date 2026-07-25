@@ -156,6 +156,16 @@ All notable changes to this project are documented here. Format is based on
   (#23)
 
 ### Fixed
+- Library screen never re-rendered on tab revisit (only Compare/Export
+  listened for `screen-activated`) — mastering a track in Chain view left
+  its Library row showing the stale pre-mastering status/tag until the
+  app restarted. `library-view.js` now refreshes on activation too (#24)
+- Export queued tracks that were never mastered in Chain view using
+  whatever params happened to currently be sitting in the rack — leftover
+  edits from an unrelated track would silently apply to a track the user
+  never touched. Replaced with fixed defaults (`master.py`'s own), and
+  the queue row now says "(default)" so it's not mistaken for a real
+  per-track choice. Removed the now-unused `window.getChainParams()` (#24)
 - `master.py` now line-buffers stdout explicitly
   (`sys.stdout.reconfigure(line_buffering=True)`), since plain `-u` /
   `PYTHONUNBUFFERED` didn't reach a PyInstaller-frozen binary's stdout and
