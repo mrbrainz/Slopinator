@@ -14,12 +14,21 @@ if [ ! -x .venv/bin/pyinstaller ]; then
 fi
 
 rm -rf build/pyinstaller build/pyinstaller-work
+# Size: --optimize 2 strips docstrings from bytecode; the excludes drop
+# stdlib modules proven unused by all three modes (master run, --analyze,
+# --peaks) — see the size-optimization section in docs/context.md before
+# adding imports that might need these. scipy subpackages can NOT be
+# excluded: scipy.signal transitively imports them at module level.
 .venv/bin/pyinstaller \
   --onedir --name master \
   --distpath build/pyinstaller \
   --workpath build/pyinstaller-work \
   --specpath build/pyinstaller-work \
   --noconfirm \
+  --optimize 2 \
+  --exclude-module ssl \
+  --exclude-module _ssl \
+  --exclude-module _hashlib \
   master.py
 
 echo "freeze-python.sh: built build/pyinstaller/master/master"
