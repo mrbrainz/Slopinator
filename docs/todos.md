@@ -15,20 +15,15 @@ capability doesn't really support them as-is:
 - The meter ladder → shows the *final* measured values after a run
   completes, not true real-time metering during processing.
 
-1. Screen 4 — Export: batch export queue reusing the existing
-   drag-and-drop batch logic, with real per-track status parsed from
-   `master.py`'s streamed stdout (see scoping note above), and a
-   format/bit-depth selector wired to `--bit-depth` + output extension
-   (FLAC output already works — `soundfile` infers format from the `.flac`
-   extension, confirmed by reading `master_file()`'s `sf.write` call).
-   Currently a placeholder (`#screen-export`).
-2. Save/reuse named chain presets ("Save presets used" in the mockup) —
+1. Save/reuse named chain presets ("Save presets used" in the mockup) —
    extend `src/main/library.js`'s store to remember a named parameter set a
    user can reapply to other tracks. Chain view's `params` object
    (`src/renderer/chain-view.js`) is the natural shape to snapshot/restore.
+   The Export screen deliberately shipped without this button — add it
+   there (and in Chain view) once presets exist.
 
 ## Distribution
 
-3. Real code signing + notarization (requires an Apple Developer ID
+2. Real code signing + notarization (requires an Apple Developer ID
    certificate — ad-hoc signing only satisfies Gatekeeper on this machine,
    not on a build handed to someone else).

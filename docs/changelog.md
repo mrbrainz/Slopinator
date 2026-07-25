@@ -88,6 +88,15 @@ All notable changes to this project are documented here. Format is based on
   track is selected or it hasn't been mastered yet. Refreshes on tab
   activation (`renderer.js` now dispatches a `screen-activated` event)
   rather than tracking its own selection (#18)
+- Export screen is now real (`src/renderer/export-view.js`): every
+  analyzed library track queues up with its target shown; "Export to
+  folder…" re-masters each one sequentially into the chosen folder using
+  the exact params it was mastered with in Chain view (`masteredParams`,
+  falling back to the rack's current settings), with stepped per-track
+  progress (queued / rendering / done / failed — `master.py` reports
+  nothing mid-file, so there's no honest percentage). Format selector
+  (WAV 16-bit dithered / WAV 24-bit / FLAC 16-bit) wired to `--bit-depth`
+  plus the output extension; new `pick-export-folder` IPC handler (#19)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global
