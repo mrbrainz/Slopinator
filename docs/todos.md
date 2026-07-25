@@ -18,13 +18,8 @@ capability doesn't really support them as-is:
 (Redesign complete — all four mockup screens are real. New feature ideas
 go here as numbered items.)
 
-1. Replace scipy with hand-rolled numpy DSP to reclaim ~39MB of app size
-   (the largest remaining lever — see "App size" in context.md).
-   `master.py` uses exactly three scipy functions: `signal.butter`,
-   `signal.filtfilt`, `signal.resample_poly`. Each is implementable in
-   numpy and verifiable against scipy's output to ~1e-8 before switching
-   (build the harness first; identical-output is the acceptance bar —
-   this changes DSP internals, so it must not change the sound).
+(scipy → numpy DSP rewrite done in #23 — 220MB .app / 92MB .dmg. See
+"App size" in context.md for the current floor and what's left.)
 
 ## Distribution
 

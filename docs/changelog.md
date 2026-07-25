@@ -141,6 +141,19 @@ All notable changes to this project are documented here. Format is based on
   switched the DMG to lzfse compression (`format: ULFO`). scipy (39MB)
   can't be pruned by excludes — see the "App size" section in
   `docs/context.md` and the numpy-DSP to-do (#22)
+- Distributable shrunk further to 220MB .app / 92MB .dmg: scipy (39MB)
+  replaced entirely by `dsp.py`, a numpy-only reimplementation of the
+  `butter`/`filtfilt`/`resample_poly`/`lfilter` calls `master.py` and
+  pyloudnorm need, verified against real scipy by `tests/compare_dsp.py`
+  (sample-level diff on real audio: exactly float32 epsilon — pure
+  storage rounding, not an algorithmic difference). `master.py` stubs
+  `sys.modules['scipy.signal']` with a `dsp.lfilter`-backed shim before
+  importing pyloudnorm, whose K-weighting filter otherwise imports the
+  real scipy. `freeze-python.sh` also needs an explicit
+  `--exclude-module scipy` even with scipy fully unimported at
+  runtime — PyInstaller bundles by static `import` analysis, and
+  pyloudnorm's source still has `import scipy.signal` at module level
+  (#23)
 
 ### Fixed
 - `master.py` now line-buffers stdout explicitly

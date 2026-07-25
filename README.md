@@ -16,12 +16,17 @@ WAV/AIFF/FLAC).
 
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install numpy scipy soundfile pyloudnorm pydub
+.venv/bin/pip install numpy soundfile pyloudnorm pydub
 ```
 
 (A venv is required on Homebrew Python — it blocks global `pip install`.
 The Electron app auto-detects `.venv/bin/python3` if present, falling back
 to plain `python3` otherwise.)
+
+`master.py` uses `dsp.py` (plain numpy) instead of scipy — see "App size"
+in `docs/context.md`. scipy is only needed to run
+`tests/compare_dsp.py`, which verifies `dsp.py` against it:
+`.venv/bin/pip install scipy`.
 
 ## Usage
 

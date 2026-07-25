@@ -22,8 +22,24 @@ import sys
 
 import numpy as np
 import soundfile as sf
+
+# numpy-only stand-in for the scipy.signal functions this app needs —
+# verified against scipy by tests/compare_dsp.py (run it before touching
+# dsp.py). Dropping scipy keeps ~39MB out of the frozen app. pyloudnorm
+# imports scipy.signal for one lfilter call, so it gets a stub backed by
+# dsp, installed before pyloudnorm's import below.
+import dsp as signal
+
+import types
+
+_scipy_stub = types.ModuleType("scipy")
+_scipy_signal_stub = types.ModuleType("scipy.signal")
+_scipy_signal_stub.lfilter = signal.lfilter
+_scipy_stub.signal = _scipy_signal_stub
+sys.modules["scipy"] = _scipy_stub
+sys.modules["scipy.signal"] = _scipy_signal_stub
+
 import pyloudnorm as pyln
-from scipy import signal
 
 
 def load_audio(path):
