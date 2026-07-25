@@ -15,6 +15,9 @@ contextBridge.exposeInMainWorld('slopinator', {
   getPeaks: (filePath, buckets) => ipcRenderer.invoke('get-peaks', { filePath, buckets }),
   pickImportFiles: () => ipcRenderer.invoke('pick-import-files'),
   pickExportFolder: () => ipcRenderer.invoke('pick-export-folder'),
+  presetsList: () => ipcRenderer.invoke('presets-list'),
+  presetsSave: (name, params) => ipcRenderer.invoke('presets-save', { name, params }),
+  presetsDelete: (name) => ipcRenderer.invoke('presets-delete', name),
   libraryImport: (paths) => ipcRenderer.invoke('library-import', paths),
   onMasterLog: (callback) => {
     const listener = (_event, payload) => callback(payload);

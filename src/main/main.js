@@ -191,6 +191,10 @@ ipcMain.handle('library-add', (_event, filePath) => library.addTrack(userDataDir
 ipcMain.handle('library-update', (_event, { id, patch }) => library.updateTrack(userDataDir(), id, patch));
 ipcMain.handle('library-remove', (_event, id) => library.removeTrack(userDataDir(), id));
 
+ipcMain.handle('presets-list', () => library.loadPresets(userDataDir()));
+ipcMain.handle('presets-save', (_event, { name, params }) => library.savePreset(userDataDir(), name, params));
+ipcMain.handle('presets-delete', (_event, name) => library.deletePreset(userDataDir(), name));
+
 ipcMain.handle('library-analyze', async (_event, id) => {
   const track = library.loadLibrary(userDataDir()).find((t) => t.id === id);
   if (!track) return { success: false, error: 'track not found' };
