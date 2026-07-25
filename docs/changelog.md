@@ -49,6 +49,11 @@ All notable changes to this project are documented here. Format is based on
   masked by averaging. New `get-peaks` IPC handler exposed as
   `window.slopinator.getPeaks()`. Not wired to any UI yet — foundational for
   Chain view and Compare's real waveforms (#12)
+- In-app audio playback (`src/renderer/player.js`): a thin wrapper around a
+  shared `<audio>` element, exposed as `window.player`
+  (load/play/pause/toggle/seekToFraction/isPlaying/onTimeUpdate/onEnded).
+  Not wired to any UI yet — foundational for Chain view's waveform and
+  Compare's A/B listen buttons (#13)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global
