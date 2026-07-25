@@ -1,47 +1,82 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>Slopinator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Slopinator</h1>
+<div class="app-frame">
 
-  <div id="drop-zone">
-    Drop a folder here to master every track in it, or a single audio file
+  <div class="titlebar">
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    <div class="brand">slopinator<span>.</span></div>
   </div>
 
-  <div class="field">
-    <label>Input file</label>
-    <div class="row">
-      <input id="input-path" type="text" readonly placeholder="No file selected" />
-      <button id="pick-input">Choose…</button>
+  <div class="tabs">
+    <button class="tab" data-screen="library">1 · Library</button>
+    <button class="tab active" data-screen="chain">2 · Chain view</button>
+    <button class="tab" data-screen="compare">3 · Compare</button>
+    <button class="tab" data-screen="export">4 · Export</button>
+  </div>
+
+  <!-- Chain view starts active since it's the only screen with real
+       functionality so far — the other three are placeholders until their
+       own to-dos land (see docs/todos.md). -->
+
+  <div class="screen" id="screen-library">
+    <div class="placeholder">Library — coming soon.</div>
+  </div>
+
+  <div class="screen active" id="screen-chain">
+    <div id="drop-zone">
+      Drop a folder here to master every track in it, or a single audio file
     </div>
-  </div>
 
-  <div class="field">
-    <label>Output file</label>
-    <div class="row">
-      <input id="output-path" type="text" readonly placeholder="No output selected" />
-      <button id="pick-output">Choose…</button>
+    <div class="field">
+      <label>Input file</label>
+      <div class="row">
+        <input id="input-path" type="text" readonly placeholder="No file selected" />
+        <button class="btn ghost" id="pick-input">Choose…</button>
+      </div>
     </div>
+
+    <div class="field">
+      <label>Output file</label>
+      <div class="row">
+        <input id="output-path" type="text" readonly placeholder="No output selected" />
+        <button class="btn ghost" id="pick-output">Choose…</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="format">Loudness preset</label>
+      <select id="format">
+        <option value="streaming">Streaming (-14 LUFS)</option>
+        <option value="soundcloud">SoundCloud (-11 LUFS)</option>
+        <option value="club">Club (-8 LUFS)</option>
+      </select>
+    </div>
+
+    <button class="btn" id="master-btn" disabled>Master</button>
+
+    <p id="status"></p>
+    <pre id="log"></pre>
   </div>
 
-  <div class="field">
-    <label for="format">Loudness preset</label>
-    <select id="format">
-      <option value="streaming">Streaming (-14 LUFS)</option>
-      <option value="soundcloud">SoundCloud (-11 LUFS)</option>
-      <option value="club">Club (-8 LUFS)</option>
-    </select>
+  <div class="screen" id="screen-compare">
+    <div class="placeholder">Compare — coming soon.</div>
   </div>
 
-  <button id="master-btn" disabled>Master</button>
+  <div class="screen" id="screen-export">
+    <div class="placeholder">Export — coming soon.</div>
+  </div>
 
-  <p id="status"></p>
-  <pre id="log"></pre>
+  <div class="caption">Signal-chain modules mirror master.py's actual processing order — what you see is what runs.</div>
+</div>
 
-  <script src="renderer.js"></script>
+<script src="renderer.js"></script>
 </body>
 </html>
