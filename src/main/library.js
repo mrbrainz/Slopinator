@@ -3,10 +3,12 @@ const path = require('path');
 const crypto = require('crypto');
 
 // Track lifecycle: 'raw' (imported, not yet analyzed) -> 'needs_mastering'
-// (analyzed, has lufs/truePeakDb) -> 'mastered' (run through master.py,
-// has masteredPreset/masteredAt). Callers (library screen, analyze step,
-// master-run step) are responsible for setting status via updateTrack —
-// this module just persists whatever it's given.
+// (analyzed, has lufs/truePeakDb) -> 'mastered' (run through master.py, has
+// masteredPreset/masteredAt/masteredPath/masteredLufs/masteredTruePeakDb/
+// masteredParams — the output path, its own measured stats, and the exact
+// rack params used, for the Compare screen). Callers (library screen,
+// analyze step, master-run step) are responsible for setting status via
+// updateTrack — this module just persists whatever it's given.
 
 function libraryFilePath(userDataDir) {
   return path.join(userDataDir, 'library.json');
@@ -45,6 +47,10 @@ function addTrack(userDataDir, filePath) {
     truePeakDb: null,
     masteredPreset: null,
     masteredAt: null,
+    masteredPath: null,
+    masteredLufs: null,
+    masteredTruePeakDb: null,
+    masteredParams: null,
   };
   tracks.push(track);
   saveLibrary(userDataDir, tracks);

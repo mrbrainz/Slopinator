@@ -81,6 +81,13 @@ All notable changes to this project are documented here. Format is based on
 - App icon (`assets/icon.png`) — used for the dev window and, via
   electron-builder's `directories.buildResources`, auto-generated into a
   proper `.icns` for the packaged app (#17)
+- Compare screen is now real (`src/renderer/compare-view.js`): before/after
+  cards for whichever track is loaded in Chain view, once it's been
+  mastered — real loudness/true-peak stats, real waveforms, and A/B listen
+  buttons via `window.player`. Shows an explanatory placeholder if no
+  track is selected or it hasn't been mastered yet. Refreshes on tab
+  activation (`renderer.js` now dispatches a `screen-activated` event)
+  rather than tracking its own selection (#18)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global
@@ -92,6 +99,14 @@ All notable changes to this project are documented here. Format is based on
 - `run-master`'s result now includes `finalLufs`/`finalTruePeakDb`, parsed
   from the run's own stdout server-side, instead of leaving log-scraping
   to the renderer (#16)
+- Library track schema gained `masteredPath`/`masteredLufs`/
+  `masteredTruePeakDb`/`masteredParams`, snapshotted on a successful master
+  run — needed by Compare to know what to show and play back, and by the
+  Loudness/Export to-dos later (#18)
+- `window.player` gained `getCurrentPath()` — needed once more than one
+  screen (Chain view, Compare) shares the same underlying `<audio>`
+  element, so each can tell whether the currently loaded/playing file is
+  actually its own before reacting to `onTimeUpdate`/`onEnded` (#18)
 
 ### Fixed
 - `master.py` now line-buffers stdout explicitly

@@ -93,7 +93,37 @@
   </div>
 
   <div class="screen" id="screen-compare">
-    <div class="placeholder">Compare — coming soon.</div>
+    <p class="now-mastering" id="compare-track-name">Compare</p>
+    <p class="now-sub">Tap either card to audition. Levels shown match what you'll hear.</p>
+
+    <div class="placeholder" id="compare-empty">
+      Select a track from your Library and master it in Chain view first, then come back here to compare.
+    </div>
+
+    <div id="compare-content" style="display:none;">
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h4>Original</h4>
+          <div class="waveform" id="compare-wave-before"></div>
+          <div class="stat-line"><span>Integrated loudness</span><b id="compare-before-lufs">—</b></div>
+          <div class="stat-line"><span>True peak</span><b id="compare-before-peak">—</b></div>
+          <div class="stat-line"><span>Stereo bass</span><b>unlinked</b></div>
+          <button class="listen-btn" id="compare-listen-before">&#9656; Listen to original</button>
+        </div>
+        <div class="compare-card after">
+          <h4>Mastered</h4>
+          <div class="waveform" id="compare-wave-after"></div>
+          <div class="stat-line"><span>Integrated loudness</span><b id="compare-after-lufs">—</b></div>
+          <div class="stat-line"><span>True peak</span><b id="compare-after-peak">—</b></div>
+          <div class="stat-line"><span>Stereo bass</span><b id="compare-after-bass">—</b></div>
+          <button class="listen-btn amber" id="compare-listen-after">&#9656; Listen to mastered</button>
+        </div>
+      </div>
+      <div class="bottom-actions">
+        <button class="btn ghost" id="compare-adjust-btn">Adjust chain</button>
+        <button class="btn" id="compare-export-btn">Looks good — export &rarr;</button>
+      </div>
+    </div>
   </div>
 
   <div class="screen" id="screen-export">
@@ -107,5 +137,6 @@
 <script src="renderer.js"></script>
 <script src="chain-view.js"></script>
 <script src="library-view.js"></script>
+<script src="compare-view.js"></script>
 </body>
 </html>

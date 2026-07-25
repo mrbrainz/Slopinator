@@ -315,16 +315,23 @@ async function loadWaveform(path) {
 }
 
 playBtn.addEventListener('click', async () => {
+  // The player is shared across views — another view (e.g. Compare) may
+  // have loaded something else since we last called player.load(inputPath).
+  if (window.player.getCurrentPath() !== inputPath) {
+    await window.player.load(inputPath);
+  }
   await window.player.toggle();
   playBtn.textContent = window.player.isPlaying() ? '❚❚ Pause' : '▶ Play';
 });
 
 window.player.onTimeUpdate((fraction) => {
+  if (window.player.getCurrentPath() !== inputPath) return;
   const playedCount = Math.floor(fraction * waveformBars.length);
   waveformBars.forEach((bar, i) => bar.classList.toggle('played', i < playedCount));
 });
 
 window.player.onEnded(() => {
+  if (window.player.getCurrentPath() !== inputPath) return;
   playBtn.textContent = '▶ Play';
 });
 
@@ -355,6 +362,8 @@ window.selectChainInputAndNavigate = (path, trackId) => {
   selectChainInput(path, trackId);
   activateTab('chain');
 };
+
+window.getCurrentChainTrack = () => ({ trackId: currentTrackId, path: inputPath });
 
 document.getElementById('pick-input').addEventListener('click', async () => {
   const picked = await window.slopinator.pickInputFile();
@@ -391,7 +400,9 @@ async function runWithLogging(runFn, onDone) {
 masterBtn.addEventListener('click', () => {
   statusEl.textContent = 'Mastering…';
   const trackIdAtRunStart = currentTrackId;
+  const outputPathAtRunStart = outputPath;
   const presetAtRunStart = currentPresetName();
+  const paramsAtRunStart = { ...params };
 
   runWithLogging(
     () => window.slopinator.runMaster({ inputPath, outputPath, params }),
@@ -409,6 +420,10 @@ masterBtn.addEventListener('click', () => {
           status: 'mastered',
           masteredPreset: presetAtRunStart,
           masteredAt: new Date().toISOString(),
+          masteredPath: outputPathAtRunStart,
+          masteredLufs: result.finalLufs,
+          masteredTruePeakDb: result.finalTruePeakDb,
+          masteredParams: paramsAtRunStart,
         });
       }
     }

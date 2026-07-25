@@ -60,6 +60,14 @@ function isPlaying() {
   return !audioEl.paused && !audioEl.ended;
 }
 
+// The audio element is a single shared singleton across views (Chain view,
+// Compare, ...) — callers should check this against the path they expect
+// to be playing before reacting to onTimeUpdate/onEnded, since another
+// view may have loaded something else in the meantime.
+function getCurrentPath() {
+  return currentPath;
+}
+
 function onTimeUpdate(callback) {
   const handler = () => {
     if (!isFinite(audioEl.duration) || audioEl.duration <= 0) return;
@@ -74,4 +82,4 @@ function onEnded(callback) {
   return () => audioEl.removeEventListener('ended', callback);
 }
 
-window.player = { load, play, pause, toggle, seekToFraction, isPlaying, onTimeUpdate, onEnded };
+window.player = { load, play, pause, toggle, seekToFraction, isPlaying, onTimeUpdate, onEnded, getCurrentPath };
