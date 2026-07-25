@@ -12,8 +12,14 @@ All notable changes to this project are documented here. Format is based on
   chain (#1)
 - Mastering UI: input/output file pickers, loudness preset dropdown, and a
   "Master" button (not yet wired to `master.py`) (#2)
+- Wired the Master button to `master.py` via a spawned child process; app
+  auto-detects a project-local `.venv/bin/python3` if present, falling back
+  to plain `python3` (#3)
 
 ### Changed
+- README setup instructions now use a `.venv` instead of a global
+  `pip install`, since Homebrew Python blocks global installs (#3)
+
 ### Fixed
 
 ## [0.1.0] - 2026-07-25

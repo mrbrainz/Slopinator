@@ -8,3 +8,4 @@ __pycache__/
 mastered/
 node_modules/
 dist/
+.venv/
