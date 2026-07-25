@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Chain — mastering app mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --base:#171a1f;
+    --panel:#20242b;
+    --panel-alt:#262b33;
+    --line:#343b46;
+    --amber:#ffa53d;
+    --teal:#4fd8c4;
+    --text:#edeae3;
+    --muted:#8b92a0;
+    --danger:#ff5b54;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--base);
+    color:var(--text);
+    font-family:'Manrope',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app-frame{
+    max-width:1180px;
+    margin:0 auto;
+    padding:28px 28px 60px;
+  }
+  .titlebar{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding-bottom:20px;
+  }
+  .dot{width:11px;height:11px;border-radius:50%;background:#3a4049;}
+  .brand{
+    margin-left:8px;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:15px;
+    letter-spacing:0.02em;
+  }
+  .brand span{color:var(--amber);}
+
+  /* Tabs to switch screens */
+  .tabs{
+    display:flex;
+    gap:6px;
+    margin-bottom:22px;
+    border-bottom:1px solid var(--line);
+  }
+  .tab{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:0.03em;
+    color:var(--muted);
+    background:none;
+    border:none;
+    padding:10px 16px;
+    cursor:pointer;
+    border-bottom:2px solid transparent;
+    text-transform:uppercase;
+  }
+  .tab.active{color:var(--text);border-bottom-color:var(--amber);}
+  .tab:hover{color:var(--text);}
+
+  .screen{display:none;}
+  .screen.active{display:block;}
+
+  /* ---------- SCREEN 1: LIBRARY ---------- */
+  .lib-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    margin-bottom:22px;
+  }
+  .lib-header h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:28px;
+    margin:0;
+    font-weight:700;
+  }
+  .lib-header p{color:var(--muted);margin:6px 0 0;font-size:13px;}
+  .btn{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:13px;
+    letter-spacing:0.02em;
+    background:var(--amber);
+    color:#20140a;
+    border:none;
+    padding:11px 18px;
+    border-radius:7px;
+    cursor:pointer;
+  }
+  .btn.ghost{
+    background:transparent;
+    color:var(--text);
+    border:1px solid var(--line);
+  }
+  .btn.small{padding:7px 12px;font-size:12px;}
+
+  .drop-zone{
+    border:1.5px dashed var(--line);
+    border-radius:var(--radius);
+    padding:34px;
+    text-align:center;
+    color:var(--muted);
+    font-size:13px;
+    margin-bottom:26px;
+  }
+  .drop-zone b{color:var(--text);}
+
+  .track-row{
+    display:grid;
+    grid-template-columns:34px 1fr 90px 130px 90px;
+    align-items:center;
+    gap:16px;
+    padding:14px 12px;
+    border-radius:8px;
+    border-bottom:1px solid var(--line);
+  }
+  .track-row:hover{background:var(--panel);}
+  .status-dot{width:8px;height:8px;border-radius:50%;}
+  .status-dot.done{background:var(--teal);}
+  .status-dot.needs{background:var(--amber);}
+  .status-dot.raw{background:var(--muted);}
+  .track-name{font-weight:600;font-size:14px;}
+  .track-sub{color:var(--muted);font-size:12px;margin-top:2px;}
+  .mini-meter{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--teal);
+  }
+  .mini-meter.warn{color:var(--amber);}
+  .tag{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--muted);
+    background:var(--panel-alt);
+    padding:3px 8px;
+    border-radius:5px;
+    display:inline-block;
+  }
+
+  /* ---------- SCREEN 2: CHAIN / MASTER VIEW ---------- */
+  .master-layout{
+    display:grid;
+    grid-template-columns:1fr 260px;
+    gap:24px;
+  }
+  .now-mastering{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:22px;
+    font-weight:700;
+    margin:0 0 2px;
+  }
+  .now-sub{color:var(--muted);font-size:13px;margin-bottom:22px;}
+
+  /* waveform */
+  .waveform{
+    height:86px;
+    background:var(--panel);
+    border-radius:var(--radius);
+    display:flex;
+    align-items:center;
+    gap:2px;
+    padding:0 14px;
+    margin-bottom:22px;
+    overflow:hidden;
+  }
+  .bar{width:3px;background:var(--line);border-radius:2px;}
+  .bar.played{background:var(--teal);}
+
+  /* rack chain */
+  .chain{
+    display:flex;
+    align-items:stretch;
+    gap:0;
+    margin-bottom:26px;
+    overflow-x:auto;
+    padding-bottom:6px;
+  }
+  .module{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    min-width:132px;
+    padding:14px 12px;
+    position:relative;
+    margin-right:14px;
+    cursor:pointer;
+    transition:border-color .15s;
+  }
+  .module:hover{border-color:var(--amber);}
+  .module.active{border-color:var(--amber);background:var(--panel-alt);}
+  .module::after{
+    content:"→";
+    position:absolute;
+    right:-19px;
+    top:50%;
+    transform:translateY(-50%);
+    color:var(--line);
+    font-size:14px;
+  }
+  .module:last-child{margin-right:0;}
+  .module:last-child::after{content:"";}
+  .mod-led{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--teal);
+    margin-bottom:10px;
+    box-shadow:0 0 6px var(--teal);
+  }
+  .mod-led.off{background:#454b56;box-shadow:none;}
+  .mod-name{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:12.5px;
+    margin-bottom:3px;
+  }
+  .mod-val{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--muted);
+  }
+
+  /* expanded module panel */
+  .mod-detail{
+    background:var(--panel);
+    border-radius:var(--radius);
+    padding:20px;
+    margin-bottom:22px;
+  }
+  .mod-detail h3{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:14px;
+    margin:0 0 16px;
+  }
+  .slider-row{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin-bottom:14px;
+    font-size:12px;
+    color:var(--muted);
+  }
+  .slider-row label{width:110px;font-family:'JetBrains Mono',monospace;font-size:11px;}
+  .slider-track{
+    flex:1;
+    height:4px;
+    background:var(--line);
+    border-radius:2px;
+    position:relative;
+  }
+  .slider-fill{
+    position:absolute;left:0;top:0;bottom:0;
+    background:var(--amber);
+    border-radius:2px;
+  }
+  .slider-handle{
+    width:13px;height:13px;border-radius:50%;
+    background:var(--amber);
+    position:absolute;top:50%;transform:translate(-50%,-50%);
+  }
+  .slider-num{
+    font-family:'JetBrains Mono',monospace;
+    color:var(--text);
+    width:48px;
+    text-align:right;
+  }
+
+  /* meters sidebar */
+  .meter-panel{
+    background:var(--panel);
+    border-radius:var(--radius);
+    padding:18px;
+  }
+  .meter-panel h4{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:12px;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin:0 0 16px;
+  }
+  .big-reading{
+    font-family:'JetBrains Mono',monospace;
+    font-size:34px;
+    font-weight:600;
+    color:var(--amber);
+    line-height:1;
+  }
+  .big-reading small{font-size:14px;color:var(--muted);font-weight:400;}
+  .reading-label{font-size:11px;color:var(--muted);margin:4px 0 18px;}
+  .ladder{display:flex;flex-direction:column-reverse;gap:3px;margin-bottom:18px;}
+  .rung{height:6px;border-radius:2px;background:var(--line);}
+  .rung.lit-teal{background:var(--teal);}
+  .rung.lit-amber{background:var(--amber);}
+  .rung.lit-red{background:var(--danger);}
+  .ab-toggle{
+    display:flex;
+    background:var(--panel-alt);
+    border-radius:8px;
+    padding:3px;
+    margin-top:6px;
+  }
+  .ab-toggle button{
+    flex:1;
+    background:none;
+    border:none;
+    color:var(--muted);
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:12px;
+    padding:8px 0;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  .ab-toggle button.on{background:var(--amber);color:#20140a;}
+
+  .preset-row{display:flex;gap:8px;margin-top:22px;flex-wrap:wrap;}
+  .chip{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    padding:6px 11px;
+    border-radius:16px;
+    border:1px solid var(--line);
+    color:var(--muted);
+    cursor:pointer;
+  }
+  .chip.on{border-color:var(--amber);color:var(--amber);}
+
+  .bottom-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:8px;}
+
+  /* ---------- SCREEN 3: COMPARE ---------- */
+  .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
+  .compare-card{background:var(--panel);border-radius:var(--radius);padding:20px;}
+  .compare-card.after{border:1px solid var(--amber);}
+  .compare-card h4{
+    font-family:'Space Grotesk',sans-serif;
+    margin:0 0 4px;font-size:13px;
+    text-transform:uppercase;letter-spacing:.04em;
+    color:var(--muted);
+  }
+  .compare-card.after h4{color:var(--amber);}
+  .compare-wave{height:60px;display:flex;align-items:center;gap:2px;margin:14px 0;}
+  .stat-line{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:12px;padding:6px 0;border-top:1px solid var(--line);color:var(--muted);}
+  .stat-line b{color:var(--text);font-weight:500;}
+  .compare-card.after .stat-line b{color:var(--amber);}
+  .listen-btn{
+    width:100%;margin-top:14px;
+    background:var(--panel-alt);
+    border:1px solid var(--line);
+    color:var(--text);
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;font-size:12px;
+    padding:10px;border-radius:7px;cursor:pointer;
+  }
+
+  /* ---------- SCREEN 4: EXPORT ---------- */
+  .export-list{margin-bottom:20px;}
+  .export-row{
+    display:grid;
+    grid-template-columns:1fr 120px 100px 90px;
+    align-items:center;
+    gap:16px;
+    padding:13px 12px;
+    border-bottom:1px solid var(--line);
+    font-size:13px;
+  }
+  .export-row.head{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-family:'Space Grotesk',sans-serif;}
+  .progress-track{height:5px;background:var(--panel-alt);border-radius:3px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--teal);}
+  .format-select{
+    background:var(--panel-alt);
+    border:1px solid var(--line);
+    color:var(--text);
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    padding:8px 10px;
+    border-radius:6px;
+    margin-bottom:18px;
+  }
+
+  .caption{
+    color:var(--muted);
+    font-size:12px;
+    margin-top:26px;
+    padding-top:16px;
+    border-top:1px solid var(--line);
+  }
+</style>
+</head>
+<body>
+<div class="app-frame">
+
+  <div class="titlebar">
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    <div class="brand">chain<span>.</span></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-screen="s1">1 · Library</button>
+    <button class="tab" data-screen="s2">2 · Chain view</button>
+    <button class="tab" data-screen="s3">3 · Compare</button>
+    <button class="tab" data-screen="s4">4 · Export</button>
+  </div>
+
+  <!-- SCREEN 1: LIBRARY -->
+  <div class="screen active" id="s1">
+    <div class="lib-header">
+      <div>
+        <h1>Your tracks</h1>
+        <p>7 tracks · 2 need mastering</p>
+      </div>
+      <button class="btn">+ Import tracks</button>
+    </div>
+
+    <div class="drop-zone">Drop WAV, AIFF or FLAC files here — or <b>browse your folders</b></div>
+
+    <div class="track-row" style="color:var(--muted);font-family:'Space Grotesk',sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--line);">
+      <div></div><div>Track</div><div>Loudness</div><div>Status</div><div>Peak</div>
+    </div>
+
+    <div class="track-row">
+      <div class="status-dot done"></div>
+      <div><div class="track-name">Midnight Run (VIP Edit)</div><div class="track-sub">4:32 · imported today</div></div>
+      <div class="mini-meter">−8.1 LUFS</div>
+      <div><span class="tag">mastered · club</span></div>
+      <div class="mini-meter">−1.0 dBTP</div>
+    </div>
+    <div class="track-row">
+      <div class="status-dot needs"></div>
+      <div><div class="track-name">Low End Theory</div><div class="track-sub">6:10 · imported today</div></div>
+      <div class="mini-meter warn">−15.8 LUFS</div>
+      <div><span class="tag">needs mastering</span></div>
+      <div class="mini-meter warn">−4.2 dBTP</div>
+    </div>
+    <div class="track-row">
+      <div class="status-dot done"></div>
+      <div><div class="track-name">Rooftop Sunrise</div><div class="track-sub">5:47 · yesterday</div></div>
+      <div class="mini-meter">−11.0 LUFS</div>
+      <div><span class="tag">mastered · soundcloud</span></div>
+      <div class="mini-meter">−1.0 dBTP</div>
+    </div>
+    <div class="track-row">
+      <div class="status-dot raw"></div>
+      <div><div class="track-name">untitled_bounce_04</div><div class="track-sub">3:58 · 3 days ago</div></div>
+      <div class="mini-meter" style="color:var(--muted);">—</div>
+      <div><span class="tag">raw import</span></div>
+      <div class="mini-meter" style="color:var(--muted);">—</div>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: CHAIN VIEW -->
+  <div class="screen" id="s2">
+    <p class="now-mastering">Low End Theory</p>
+    <p class="now-sub">6:10 · imported today · original 24-bit / 44.1kHz</p>
+
+    <div class="waveform" id="waveform"></div>
+
+    <div class="chain">
+      <div class="module"><div class="mod-led"></div><div class="mod-name">EQ</div><div class="mod-val">−1.0 / −0.5 / +0.5dB</div></div>
+      <div class="module active"><div class="mod-led"></div><div class="mod-name">Mono bass</div><div class="mod-val">below 120Hz</div></div>
+      <div class="module"><div class="mod-led"></div><div class="mod-name">Saturation</div><div class="mod-val">5% drive</div></div>
+      <div class="module"><div class="mod-led"></div><div class="mod-name">Loudness</div><div class="mod-val">target −8 LUFS</div></div>
+      <div class="module"><div class="mod-led"></div><div class="mod-name">Limiter</div><div class="mod-val">ceiling −1.0dBTP</div></div>
+    </div>
+
+    <div class="mod-detail">
+      <h3>Mono bass — currently selected module</h3>
+      <div class="slider-row">
+        <label>CROSSOVER</label>
+        <div class="slider-track"><div class="slider-fill" style="width:40%"></div><div class="slider-handle" style="left:40%"></div></div>
+        <div class="slider-num">120 Hz</div>
+      </div>
+      <div class="slider-row">
+        <label>BYPASS</label>
+        <div class="ab-toggle" style="max-width:140px;">
+          <button class="on">On</button><button>Off</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="master-layout" style="grid-template-columns:1fr;">
+    </div>
+  </div>
+
+  <!-- (meters live alongside chain — rendered via grid below on wide screens) -->
+
+  <!-- SCREEN 3: COMPARE -->
+  <div class="screen" id="s3">
+    <p class="now-mastering">Low End Theory — before / after</p>
+    <p class="now-sub">Tap either card to audition. Levels shown match what you'll hear.</p>
+
+    <div class="compare-grid">
+      <div class="compare-card">
+        <h4>Original</h4>
+        <div class="compare-wave" id="wave-before"></div>
+        <div class="stat-line"><span>Integrated loudness</span><b>−15.8 LUFS</b></div>
+        <div class="stat-line"><span>True peak</span><b>−4.2 dBTP</b></div>
+        <div class="stat-line"><span>Stereo bass</span><b>unlinked</b></div>
+        <button class="listen-btn">▸ Listen to original</button>
+      </div>
+      <div class="compare-card after">
+        <h4>Mastered</h4>
+        <div class="compare-wave" id="wave-after"></div>
+        <div class="stat-line"><span>Integrated loudness</span><b>−8.0 LUFS</b></div>
+        <div class="stat-line"><span>True peak</span><b>−1.0 dBTP</b></div>
+        <div class="stat-line"><span>Stereo bass</span><b>mono below 120Hz</b></div>
+        <button class="listen-btn" style="background:var(--amber);color:#20140a;border:none;">▸ Listen to mastered</button>
+      </div>
+    </div>
+    <div class="bottom-actions">
+      <button class="btn ghost">Adjust chain</button>
+      <button class="btn">Looks good — export →</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 4: EXPORT -->
+  <div class="screen" id="s4">
+    <p class="now-mastering">Export</p>
+    <p class="now-sub">2 tracks queued</p>
+
+    <select class="format-select">
+      <option>WAV · 16-bit · dithered</option>
+      <option>WAV · 24-bit</option>
+      <option>FLAC · 16-bit</option>
+    </select>
+
+    <div class="export-list">
+      <div class="export-row head"><div>Track</div><div>Target</div><div>Progress</div><div></div></div>
+      <div class="export-row">
+        <div class="track-name">Low End Theory</div>
+        <div class="mini-meter">−8 LUFS club</div>
+        <div class="progress-track"><div class="progress-fill" style="width:100%"></div></div>
+        <div class="mini-meter">Done</div>
+      </div>
+      <div class="export-row">
+        <div class="track-name">untitled_bounce_04</div>
+        <div class="mini-meter warn">−14 LUFS streaming</div>
+        <div class="progress-track"><div class="progress-fill" style="width:62%;background:var(--amber);"></div></div>
+        <div class="mini-meter warn">Rendering…</div>
+      </div>
+    </div>
+
+    <div class="bottom-actions">
+      <button class="btn ghost">Export to folder…</button>
+      <button class="btn">Save presets used</button>
+    </div>
+  </div>
+
+  <div class="caption">Mockup — signal-chain modules mirror the actual mastering script's processing order, so what you see is what runs.</div>
+</div>
+
+<script>
+  // tab switching
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById(t.dataset.screen).classList.add('active');
+    });
+  });
+
+  // generate waveform bars
+  function buildWave(el, playedRatio, seedOffset){
+    if(!el) return;
+    const n = 90;
+    for(let i=0;i<n;i++){
+      const h = 6 + Math.abs(Math.sin(i*0.4+seedOffset))*34 + Math.random()*10;
+      const bar = document.createElement('div');
+      bar.className = 'bar' + (i/n < playedRatio ? ' played' : '');
+      bar.style.height = h+'px';
+      el.appendChild(bar);
+    }
+  }
+  buildWave(document.getElementById('waveform'), 0.35, 0);
+  buildWave(document.getElementById('wave-before'), 0, 1.4);
+  buildWave(document.getElementById('wave-after'), 0, 1.4);
+
+  // make "after" wave look louder/denser (visual only)
+  document.querySelectorAll('#wave-after .bar').forEach(b=>{
+    b.style.background = 'var(--amber)';
+    b.style.height = (parseFloat(b.style.height) * 1.15) + 'px';
+  });
+</script>
+</body>
+</html>
