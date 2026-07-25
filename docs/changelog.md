@@ -62,10 +62,24 @@ All notable changes to this project are documented here. Format is based on
   batch mastering); clicking a row switches to Chain view with that
   track's path pre-selected as the input. Library is now the default
   active tab (#14)
+- Chain view is now a real interactive module rack
+  (`src/renderer/chain-view.js`): 5 clickable modules (EQ, Mono bass,
+  Saturation, Loudness, Limiter) with an expandable detail panel — sliders
+  for crossover/saturation drive/loudness target/limiter ceiling, bypass
+  toggles for EQ/mono-bass/saturation, loudness preset chips — mapping
+  directly to `master.py`'s real CLI flags, replacing the single
+  format-preset dropdown. Real waveform bars via `getPeaks()`, played back
+  via `window.player` with live playhead highlighting. On a successful
+  master run of a track opened from the Library, `libraryUpdate`s it to
+  `status: 'mastered'` with the preset (if any) and timestamp (#15)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global
   `pip install`, since Homebrew Python blocks global installs (#3)
+- `run-master`/`run-master-batch` IPC handlers take a full `params` object
+  (target/ceiling/crossover/saturationAmount/eq/monoBass/saturation)
+  instead of a single `format` string, to carry the rack's full parameter
+  set (#15)
 
 ### Fixed
 - `master.py` now line-buffers stdout explicitly

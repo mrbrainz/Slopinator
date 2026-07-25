@@ -81,9 +81,24 @@ function runMasterPy(scriptArgs, sender) {
 
 const BATCH_EXTENSIONS = ['wav', 'aiff', 'aif', 'flac'];
 
-ipcMain.handle('run-master', async (event, { inputPath, outputPath, format }) => {
-  const args = [inputPath, outputPath];
-  if (format) args.push('--format', format);
+// Maps Chain view's rack state to master.py CLI flags. Numeric fields are
+// always passed explicitly (master.py has its own defaults, but the UI's
+// defaults should be the source of truth once the rack is in play);
+// eq/monoBass/saturation are opt-out flags, only added when disabled.
+function buildMasterArgs(params = {}) {
+  const args = [];
+  if (params.target != null) args.push('--target', String(params.target));
+  if (params.ceiling != null) args.push('--ceiling', String(params.ceiling));
+  if (params.crossover != null) args.push('--crossover', String(params.crossover));
+  if (params.saturationAmount != null) args.push('--saturation', String(params.saturationAmount));
+  if (params.eq === false) args.push('--no-eq');
+  if (params.monoBass === false) args.push('--no-mono-bass');
+  if (params.saturation === false) args.push('--no-saturation');
+  return args;
+}
+
+ipcMain.handle('run-master', async (event, { inputPath, outputPath, params }) => {
+  const args = [inputPath, outputPath, ...buildMasterArgs(params)];
   return runMasterPy(args, event.sender);
 });
 
@@ -95,7 +110,7 @@ ipcMain.handle('classify-path', async (_event, targetPath) => {
   }
 });
 
-ipcMain.handle('run-master-batch', async (event, { dirPath, format }) => {
+ipcMain.handle('run-master-batch', async (event, { dirPath, params }) => {
   const entries = fs.readdirSync(dirPath);
   const outdir = path.join(dirPath, 'mastered');
 
@@ -108,8 +123,7 @@ ipcMain.handle('run-master-batch', async (event, { dirPath, format }) => {
     if (!hasMatch) continue;
 
     ranAny = true;
-    const args = ['--batch', path.join(dirPath, `*.${ext}`), '--outdir', outdir];
-    if (format) args.push('--format', format);
+    const args = ['--batch', path.join(dirPath, `*.${ext}`), '--outdir', outdir, ...buildMasterArgs(params)];
 
     const result = await runMasterPy(args, event.sender);
     if (!result.success) {
