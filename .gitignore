@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.DS_Store
+*.wav
+*.aiff
+*.flac
+*.mp3
+mastered/
