@@ -1,0 +1,291 @@
+/* Cringe mode (docs/design/mockup-cringe.html), toggled via Settings.
+   Everything here is scoped under body.cringe — the DOM is identical in
+   both modes; settings.js only flips the class (plus copy/marquee/
+   confetti). First: redefine the design-system variables so every
+   component recolors itself, then layer the meme styling on top. */
+
+body.cringe{
+  --base:transparent;
+  --panel:#ffffff;
+  --panel-alt:#f5f0ff;
+  --line:#1a0033;
+  --amber:#ff2fb5;   /* accent: amber -> hot pink */
+  --teal:#c6ff1f;    /* success: teal -> lime */
+  --text:#1a0033;
+  --muted:#555a6b;
+  --danger:#ff2020;
+  --radius:14px;
+
+  --hotpink:#ff2fb5;
+  --lime:#c6ff1f;
+  --cyan:#25e9ff;
+  --purple:#9b30ff;
+  --yellow:#ffe600;
+  --orange:#ff8a00;
+
+  font-family:'Comic Neue',cursive;
+  background:
+    radial-gradient(circle at 10% 10%, #ffe600 0%, transparent 35%),
+    radial-gradient(circle at 90% 20%, #25e9ff 0%, transparent 40%),
+    radial-gradient(circle at 30% 90%, #ff2fb5 0%, transparent 40%),
+    radial-gradient(circle at 80% 85%, #c6ff1f 0%, transparent 35%),
+    linear-gradient(135deg,#9b30ff,#ff2fb5 40%,#ff8a00 70%,#ffe600);
+  background-attachment:fixed;
+}
+
+@keyframes cringe-rainbow{ to{ background-position:300% 0; } }
+@keyframes cringe-blink{ 50%{ opacity:0.35; } }
+@keyframes cringe-fall{ to{ transform:translateY(110vh) rotate(360deg); } }
+
+body.cringe #cringe-marquee{
+  display:block;
+  background:#000;
+  color:var(--lime);
+  font-family:'JetBrains Mono',monospace;
+  font-weight:700;
+  padding:8px 0;
+  font-size:13px;
+  border:3px solid var(--hotpink);
+  border-radius:8px;
+  margin-bottom:14px;
+}
+
+body.cringe .titlebar{
+  background:#fff;
+  border:5px solid var(--text);
+  border-radius:16px;
+  padding:12px 20px;
+  box-shadow:8px 8px 0 var(--text);
+  transform:rotate(-1deg);
+  margin-bottom:18px;
+}
+body.cringe .titlebar .dot{display:none;}
+body.cringe .brand{
+  font-family:'Bangers',cursive;
+  font-size:30px;
+  background:linear-gradient(90deg,var(--hotpink),var(--orange),var(--yellow),var(--lime),var(--cyan),var(--purple),var(--hotpink));
+  background-size:300% 100%;
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+  animation:cringe-rainbow 3s linear infinite;
+}
+body.cringe .badge-new{
+  display:block;
+  font-family:'Bangers',cursive;
+  background:var(--yellow);
+  border:3px solid var(--text);
+  border-radius:8px;
+  padding:4px 12px;
+  font-size:13px;
+  transform:rotate(4deg);
+  animation:cringe-blink 1s steps(1) infinite;
+  margin-left:14px;
+}
+body.cringe .settings-btn{color:var(--text);font-size:20px;}
+body.cringe .settings-menu{
+  background:#fff;
+  border:4px solid var(--text);
+  box-shadow:6px 6px 0 var(--text);
+}
+
+body.cringe .tabs{border-bottom:none;gap:10px;flex-wrap:wrap;}
+body.cringe .tab{
+  font-family:'Bangers',cursive;
+  font-size:16px;
+  color:var(--text);
+  background:#fff;
+  border:4px solid var(--text);
+  border-radius:10px;
+  padding:8px 16px;
+  box-shadow:4px 4px 0 var(--text);
+  transform:rotate(-2deg);
+  text-transform:none;
+}
+body.cringe .tab:nth-child(2){transform:rotate(1.5deg);}
+body.cringe .tab:nth-child(3){transform:rotate(-1deg);}
+body.cringe .tab:nth-child(4){transform:rotate(2deg);}
+body.cringe .tab.active{background:var(--lime);transform:translateY(-3px) rotate(0deg);border-bottom-color:var(--text);}
+body.cringe .tab:hover{background:var(--cyan);color:var(--text);}
+
+/* Each active screen becomes the mockup's white "panel" */
+body.cringe .screen.active{
+  background:#fff;
+  border:5px solid var(--text);
+  border-radius:18px;
+  padding:22px;
+  box-shadow:10px 10px 0 var(--text);
+}
+
+body.cringe .lib-header h1,
+body.cringe .now-mastering{
+  font-family:'Bangers',cursive;
+  color:var(--hotpink);
+  -webkit-text-stroke:1.5px var(--text);
+  transform:rotate(-1deg);
+}
+body.cringe .lib-header p,
+body.cringe .now-sub{font-weight:700;color:var(--muted);}
+
+body.cringe .btn{
+  font-family:'Bangers',cursive;
+  background:var(--yellow);
+  color:var(--text);
+  border:4px solid var(--text);
+  border-radius:12px;
+  box-shadow:5px 5px 0 var(--text);
+}
+body.cringe .btn:active{transform:translate(3px,3px);box-shadow:2px 2px 0 var(--text);}
+body.cringe .btn:disabled{background:#eee;color:#999;box-shadow:none;}
+body.cringe .btn.ghost{background:#fff;color:var(--text);}
+body.cringe #library-import-btn,
+body.cringe #master-btn:not(:disabled){background:var(--hotpink);color:#fff;}
+
+body.cringe .drop-zone{
+  border:4px dashed var(--purple);
+  font-family:'Bangers',cursive;
+  font-size:17px;
+  color:var(--purple);
+  background:repeating-linear-gradient(45deg,#fff,#fff 10px,#f5f0ff 10px,#f5f0ff 20px);
+}
+body.cringe .drop-zone.drag-over{border-color:var(--hotpink);color:var(--hotpink);}
+
+body.cringe .track-row{border-bottom:3px dotted var(--purple);font-weight:700;}
+body.cringe .track-row:hover{background:var(--panel-alt);}
+body.cringe .track-row.head{font-family:'Bangers',cursive;color:var(--purple);border-bottom:3px solid var(--text);text-transform:none;font-size:13px;}
+body.cringe .track-name{font-family:'Bangers',cursive;font-size:15px;}
+body.cringe .status-dot{width:14px;height:14px;border:2px solid var(--text);}
+body.cringe .status-dot.done{background:var(--lime);}
+body.cringe .status-dot.needs{background:var(--orange);animation:cringe-blink 0.8s steps(1) infinite;}
+body.cringe .status-dot.raw{background:#ccc;}
+body.cringe .mini-meter{font-weight:700;color:var(--text);}
+body.cringe .mini-meter.warn{color:var(--hotpink);}
+body.cringe .tag{
+  background:var(--text);
+  color:var(--lime);
+  transform:rotate(-2deg);
+}
+
+body.cringe .waveform{
+  background:#fff;
+  border:4px solid var(--text);
+  border-radius:14px;
+}
+body.cringe .bar{background:linear-gradient(180deg,var(--hotpink),var(--orange));}
+body.cringe .bar.played{background:var(--text);}
+
+body.cringe .module{
+  border:4px solid var(--text);
+  border-radius:14px;
+  box-shadow:5px 5px 0 var(--text);
+  text-align:center;
+  background:#fff;
+}
+body.cringe .module:hover{border-color:var(--text);background:var(--cyan);}
+body.cringe .module.active{background:var(--yellow);transform:translateY(-4px) rotate(-2deg);border-color:var(--text);}
+body.cringe .module::after{color:var(--text);font-weight:700;}
+body.cringe .mod-led{margin:0 auto 9px;border:2px solid var(--text);width:10px;height:10px;box-shadow:none;}
+body.cringe .mod-led.off{background:#ccc;}
+body.cringe .mod-name{font-family:'Bangers',cursive;font-size:14px;}
+body.cringe .mod-val{font-weight:700;}
+
+body.cringe .mod-detail{background:#fff;border:4px solid var(--text);box-shadow:5px 5px 0 var(--text);}
+body.cringe .mod-detail h3{font-family:'Bangers',cursive;font-size:18px;color:var(--hotpink);}
+body.cringe .slider-row{font-weight:700;}
+body.cringe .slider-input{height:10px;background:#eee;border:2px solid var(--text);border-radius:6px;}
+body.cringe .slider-input::-webkit-slider-runnable-track{height:6px;background:#eee;}
+body.cringe .slider-input::-webkit-slider-thumb{
+  width:20px;height:20px;
+  background:var(--lime);
+  border:3px solid var(--text);
+  margin-top:-8px;
+}
+body.cringe .slider-num{font-weight:700;}
+
+body.cringe .ab-toggle{background:#eee;border:2px solid var(--text);}
+body.cringe .ab-toggle button{font-family:'Bangers',cursive;color:var(--text);}
+body.cringe .ab-toggle button.on{background:var(--lime);color:var(--text);}
+
+body.cringe .chip{background:#fff;border:2px solid var(--text);color:var(--text);font-weight:700;}
+body.cringe .chip.on{background:var(--cyan);border-color:var(--text);color:var(--text);}
+
+body.cringe .preset-bar input,
+body.cringe .preset-bar select,
+body.cringe .format-select,
+body.cringe input[type='text'],
+body.cringe select{
+  background:#fff;
+  border:2px solid var(--text);
+  color:var(--text);
+  font-weight:700;
+}
+
+body.cringe .meter-panel{
+  background:#fff;
+  border:5px solid var(--text);
+  box-shadow:8px 8px 0 var(--text);
+}
+body.cringe .meter-panel h4{font-family:'Bangers',cursive;font-size:15px;color:var(--purple);text-transform:none;}
+body.cringe .big-reading{
+  font-family:'Bangers',cursive;
+  font-size:40px;
+  color:var(--hotpink);
+  -webkit-text-stroke:1.5px var(--text);
+}
+body.cringe .big-reading small{-webkit-text-stroke:0;color:var(--text);font-weight:700;}
+body.cringe .reading-label{font-weight:700;}
+body.cringe .rung{border:2px solid var(--text);background:#eee;height:9px;}
+body.cringe .rung.lit-teal{background:var(--lime);}
+body.cringe .rung.lit-amber{background:var(--yellow);}
+body.cringe .rung.lit-red{background:#ff2020;}
+
+body.cringe .compare-card{border:5px solid var(--text);box-shadow:6px 6px 0 var(--text);background:#fff;}
+body.cringe .compare-card.after{border-color:var(--hotpink);background:#fff7fb;}
+body.cringe .compare-card h4{font-family:'Bangers',cursive;font-size:18px;text-transform:none;color:var(--text);}
+body.cringe .compare-card.after h4{color:var(--hotpink);}
+body.cringe .stat-line{border-top:2px dotted #ccc;font-weight:700;}
+body.cringe .listen-btn{
+  background:var(--cyan);
+  border:3px solid var(--text);
+  color:var(--text);
+  font-family:'Bangers',cursive;
+}
+body.cringe .listen-btn.amber{background:var(--hotpink);color:#fff;}
+
+body.cringe .export-row{border-bottom:3px dotted var(--purple);font-weight:700;}
+body.cringe .export-row.head{font-family:'Bangers',cursive;color:var(--purple);text-transform:none;font-size:13px;}
+body.cringe .progress-track{border:2px solid var(--text);background:#eee;height:10px;}
+
+body.cringe #status{font-weight:700;color:var(--text);}
+body.cringe #log{
+  background:#000;
+  color:var(--lime);
+  border:3px solid var(--hotpink);
+  font-weight:700;
+}
+
+body.cringe .placeholder{
+  border:4px dashed var(--purple);
+  color:var(--purple);
+  font-family:'Bangers',cursive;
+  font-size:16px;
+}
+
+body.cringe .caption{
+  font-family:'Bangers',cursive;
+  font-size:15px;
+  text-align:center;
+  color:#fff;
+  text-shadow:2px 2px 0 var(--text);
+  border-top:none;
+}
+
+body.cringe .confetti{
+  position:fixed;
+  top:-20px;
+  font-size:20px;
+  font-weight:700;
+  animation:cringe-fall linear infinite;
+  pointer-events:none;
+  z-index:0;
+}

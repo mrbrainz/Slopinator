@@ -40,6 +40,47 @@ body{
 }
 .brand span{color:var(--amber);}
 
+#cringe-marquee,.badge-new{display:none;}
+
+.settings-wrap{margin-left:auto;position:relative;}
+.settings-btn{
+  background:none;
+  border:none;
+  color:var(--muted);
+  font-size:17px;
+  cursor:pointer;
+  padding:4px 6px;
+  border-radius:6px;
+}
+.settings-btn:hover{color:var(--text);background:var(--panel);}
+.settings-menu{
+  position:absolute;
+  right:0;
+  top:32px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:14px;
+  width:230px;
+  z-index:100;
+  box-shadow:0 8px 24px rgba(0,0,0,.4);
+}
+.settings-menu h5{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:11px;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin:0 0 12px;
+}
+.settings-row{display:flex;align-items:center;gap:12px;}
+.settings-label{
+  font-size:12px;
+  font-weight:600;
+  flex:0 0 auto;
+}
+.mode-toggle{flex:1;margin-top:0;}
+
 .tabs{
   display:flex;
   gap:6px;
