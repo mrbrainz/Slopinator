@@ -8,6 +8,10 @@ const library = require('./library');
 // Python required). In dev we run master.py directly via a project-local
 // .venv if present, falling back to plain python3.
 let MASTER_CMD, MASTER_PREFIX_ARGS;
+// Packaged macOS builds get their icon from the .icns electron-builder
+// bundles into the app automatically — this is only for the dev window,
+// which has no packaged bundle to draw one from.
+let DEV_ICON_PATH = null;
 if (app.isPackaged) {
   MASTER_CMD = path.join(process.resourcesPath, 'master-bin/master');
   MASTER_PREFIX_ARGS = [];
@@ -17,12 +21,14 @@ if (app.isPackaged) {
   const VENV_PYTHON = path.join(PROJECT_ROOT, '.venv/bin/python3');
   MASTER_CMD = fs.existsSync(VENV_PYTHON) ? VENV_PYTHON : 'python3';
   MASTER_PREFIX_ARGS = ['-u', MASTER_PY];
+  DEV_ICON_PATH = path.join(PROJECT_ROOT, 'assets/icon.png');
 }
 
 function createWindow() {
   const win = new BrowserWindow({
     width: 980,
     height: 720,
+    icon: DEV_ICON_PATH,
     webPreferences: {
       preload: path.join(__dirname, '../preload/preload.js'),
       contextIsolation: true,

@@ -78,6 +78,9 @@ All notable changes to this project are documented here. Format is based on
   *final* measured values, not live metering during processing. Widened
   the app window (980×720) and `.app-frame` (860px) to fit the new
   two-column Chain view layout (#16)
+- App icon (`assets/icon.png`) — used for the dev window and, via
+  electron-builder's `directories.buildResources`, auto-generated into a
+  proper `.icns` for the packaged app (#17)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global
