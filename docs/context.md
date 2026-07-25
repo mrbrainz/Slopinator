@@ -23,6 +23,20 @@ I want to create a fully fledged Electron app
    `🤖 Generated with [Claude Code](https://claude.com/claude-code)`).
 6. **Stop** — the user merges and says "continue".
 
+## Known gotchas
+
+- **macOS trashes Electron.app as "malware" after `npm install`.** This is
+  Gatekeeper/AMFI rejecting the prebuilt Electron binary's missing/invalid
+  code signature ("no CMS blob" / "Unrecoverable CT signature issue"), not
+  an actual compromised package. Fix after every fresh install (the binary
+  gets re-downloaded into `node_modules/electron/dist/`):
+  ```bash
+  xattr -cr node_modules/electron/dist/Electron.app
+  codesign --deep --force --sign - node_modules/electron/dist/Electron.app
+  ```
+  Do this before the first `npm start` / `electron .` in a clean checkout or
+  after any `npm install` that touches the `electron` package.
+
 ## Token efficiency (priority)
 
 - Don't re-read files you've seen; use `Read` with offset/limit and `grep`, not
