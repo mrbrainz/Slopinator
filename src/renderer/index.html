@@ -127,7 +127,29 @@
   </div>
 
   <div class="screen" id="screen-export">
-    <div class="placeholder">Export — coming soon.</div>
+    <p class="now-mastering">Export</p>
+    <p class="now-sub" id="export-count">0 tracks queued</p>
+
+    <div class="placeholder" id="export-empty">
+      Import and analyze some tracks in your Library first — they'll queue up here for export.
+    </div>
+
+    <div id="export-content" style="display:none;">
+      <select class="format-select" id="export-format">
+        <option value="wav16">WAV · 16-bit · dithered</option>
+        <option value="wav24">WAV · 24-bit</option>
+        <option value="flac16">FLAC · 16-bit</option>
+      </select>
+
+      <div class="export-list">
+        <div class="export-row head"><div>Track</div><div>Target</div><div>Progress</div><div></div></div>
+        <div id="export-rows"></div>
+      </div>
+
+      <div class="bottom-actions">
+        <button class="btn" id="export-run-btn">Export to folder…</button>
+      </div>
+    </div>
   </div>
 
   <div class="caption">Signal-chain modules mirror master.py's actual processing order — what you see is what runs.</div>
@@ -138,5 +160,6 @@
 <script src="chain-view.js"></script>
 <script src="library-view.js"></script>
 <script src="compare-view.js"></script>
+<script src="export-view.js"></script>
 </body>
 </html>

@@ -109,6 +109,7 @@ function buildMasterArgs(params = {}) {
   if (params.ceiling != null) args.push('--ceiling', String(params.ceiling));
   if (params.crossover != null) args.push('--crossover', String(params.crossover));
   if (params.saturationAmount != null) args.push('--saturation', String(params.saturationAmount));
+  if (params.bitDepth) args.push('--bit-depth', params.bitDepth);
   if (params.eq === false) args.push('--no-eq');
   if (params.monoBass === false) args.push('--no-mono-bass');
   if (params.saturation === false) args.push('--no-saturation');
@@ -236,6 +237,13 @@ function expandAudioPaths(paths) {
   }
   return files;
 }
+
+ipcMain.handle('pick-export-folder', async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openDirectory', 'createDirectory'],
+  });
+  return result.canceled ? null : result.filePaths[0];
+});
 
 ipcMain.handle('pick-import-files', async () => {
   const result = await dialog.showOpenDialog({
