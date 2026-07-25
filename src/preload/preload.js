@@ -1,5 +1,7 @@
-const { contextBridge } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('slopinator', {
   version: process.env.npm_package_version,
+  pickInputFile: () => ipcRenderer.invoke('pick-input-file'),
+  pickOutputPath: (defaultName) => ipcRenderer.invoke('pick-output-path', defaultName),
 });

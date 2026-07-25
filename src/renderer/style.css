@@ -1,0 +1,46 @@
+body {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  padding: 24px;
+  max-width: 480px;
+}
+
+.field {
+  margin-bottom: 16px;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+}
+
+input[type='text'] {
+  flex: 1;
+  padding: 6px 8px;
+}
+
+select {
+  width: 100%;
+  padding: 6px 8px;
+}
+
+button {
+  padding: 6px 12px;
+}
+
+#master-btn {
+  width: 100%;
+  padding: 10px;
+  font-weight: 600;
+}
+
+#status {
+  font-size: 13px;
+  color: #666;
+}

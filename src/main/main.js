@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 
 function createWindow() {
@@ -14,6 +14,22 @@ function createWindow() {
 
   win.loadFile(path.join(__dirname, '../renderer/index.html'));
 }
+
+ipcMain.handle('pick-input-file', async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: [{ name: 'Audio', extensions: ['wav', 'aiff', 'aif', 'flac'] }],
+  });
+  return result.canceled ? null : result.filePaths[0];
+});
+
+ipcMain.handle('pick-output-path', async (_event, defaultName) => {
+  const result = await dialog.showSaveDialog({
+    defaultPath: defaultName,
+    filters: [{ name: 'Audio', extensions: ['wav', 'aiff', 'flac'] }],
+  });
+  return result.canceled ? null : result.filePath;
+});
 
 app.whenReady().then(createWindow);
 
