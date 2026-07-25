@@ -3,9 +3,40 @@
 <head>
   <meta charset="UTF-8" />
   <title>Slopinator</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <h1>Slopinator</h1>
-  <p>Electron scaffold — UI comes next.</p>
+
+  <div class="field">
+    <label>Input file</label>
+    <div class="row">
+      <input id="input-path" type="text" readonly placeholder="No file selected" />
+      <button id="pick-input">Choose…</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Output file</label>
+    <div class="row">
+      <input id="output-path" type="text" readonly placeholder="No output selected" />
+      <button id="pick-output">Choose…</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="format">Loudness preset</label>
+    <select id="format">
+      <option value="streaming">Streaming (-14 LUFS)</option>
+      <option value="soundcloud">SoundCloud (-11 LUFS)</option>
+      <option value="club">Club (-8 LUFS)</option>
+    </select>
+  </div>
+
+  <button id="master-btn" disabled>Master</button>
+
+  <p id="status"></p>
+
+  <script src="renderer.js"></script>
 </body>
 </html>

@@ -10,6 +10,8 @@ All notable changes to this project are documented here. Format is based on
 - Electron project scaffold: main process, preload, minimal renderer, and
   electron-builder packaging config alongside the existing `master.py`
   chain (#1)
+- Mastering UI: input/output file pickers, loudness preset dropdown, and a
+  "Master" button (not yet wired to `master.py`) (#2)
 
 ### Changed
 ### Fixed
