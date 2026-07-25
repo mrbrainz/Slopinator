@@ -65,10 +65,11 @@ I want to create a fully fledged Electron app
   `"assets"` to match. Don't put build resources in `build/`; they'd
   silently never get committed.
 
-## App size (approach + facts, PR #22)
+## App size (approach + facts, PRs #22-#23)
 
-Baseline was a 311MB .app / 122MB .dmg; now 263MB / 105MB. Where the
-bytes live and what was done:
+Baseline was 311MB .app / 122MB .dmg. #22 (locale/stdlib pruning) got it
+to 263MB / 105MB. #23 (dropping scipy) got it to 220MB / 92MB. Where the
+bytes went and what was done:
 
 - **~170MB: Electron Framework itself.** The floor for any Electron app —
   untouchable without leaving Electron.
@@ -78,21 +79,68 @@ bytes live and what was done:
   `package.json` only prunes the *empty* `.lproj` stubs in the app's own
   `Contents/Resources` — it never touches the framework's real packs,
   which is why the manual prune exists.
-- **75MB: the PyInstaller `master-bin`** (was 84MB). `freeze-python.sh`
-  passes `--optimize 2` (strips docstrings) and `--exclude-module
-  ssl/_ssl/_hashlib` — proven unused by running all three modes
-  (master run, `--analyze`, `--peaks`) and checking `sys.modules`; this
-  drops libcrypto+libssl (6MB). **Before adding imports to `master.py`,
-  check they don't need the excluded modules** — the frozen binary will
-  fail at import time if they do (always rerun all three modes on a
-  packaged build after touching Python deps).
-- **scipy is 39MB of master-bin and can NOT be pruned by excludes**:
-  `import scipy.signal` transitively imports every heavy scipy
-  subpackage (stats, optimize, sparse, spatial…) at module level —
-  verified empirically. The only way to reclaim it is replacing the three
-  scipy calls (`butter`, `filtfilt`, `resample_poly`) with hand-rolled
-  numpy DSP, tracked as a to-do; don't waste time re-trying
-  `--exclude-module scipy.*`.
+- **PyInstaller `master-bin`.** `freeze-python.sh` passes `--optimize 2`
+  (strips docstrings) and `--exclude-module ssl/_ssl/_hashlib` — proven
+  unused by running all three modes (master run, `--analyze`, `--peaks`)
+  and checking `sys.modules`; drops libcrypto+libssl (6MB). **Before
+  adding imports to `master.py`, check they don't need the excluded
+  modules** — the frozen binary will fail at import time if they do
+  (always rerun all three modes on a packaged build after touching Python
+  deps).
+- **scipy (was 39-43MB depending on measurement point) is gone
+  entirely — not excluded, replaced.** `import scipy.signal`
+  transitively imports every heavy scipy subpackage (stats, optimize,
+  sparse, spatial…) at module level, so on its own
+  `--exclude-module scipy.*` doesn't work as a size lever (verified
+  empirically against real scipy — don't re-try it as a first move).
+  `dsp.py` is a numpy-only reimplementation of the three scipy.signal
+  functions `master.py` used (`butter`, `filtfilt`, `resample_poly`) plus
+  `lfilter` (pyloudnorm calls this internally — see below), imported as
+  `import dsp as signal` in `master.py`. **This still needs an explicit
+  `--exclude-module scipy` in `freeze-python.sh`** even with scipy fully
+  unimported by our own code — PyInstaller decides what to bundle by
+  *static* analysis of `import` statements in every module it collects,
+  and pyloudnorm's `iirfilter.py` has `import scipy.signal` at module
+  level; our runtime `sys.modules` stub (below) only changes what runs,
+  not what PyInstaller's analyzer sees. Without the exclude, scipy came
+  back in fully sized despite never being imported for real.
+  **`tests/compare_dsp.py` is the proof this didn't change the sound** —
+  it compares every function against real scipy across every filter
+  shape `master.py` produces (needs `pip install scipy` in `.venv`, dev-
+  only, never installed for the shipped app). **Run it before touching
+  `dsp.py`** — the acceptance bar for the whole rewrite was "does not
+  change the sound," not "looks right."
+  - The non-obvious part of `dsp.py`: `filtfilt` needs a stable IIR
+    recursion, which a per-sample Python loop can't do fast enough for
+    real audio. The zero-state part is computed as FFT convolution with
+    the filter's own truncated impulse response (decays below ~1e-17 of
+    its peak within a few thousand samples for a stable filter, so
+    truncating there is exact to machine precision) — split into
+    gain-balanced biquad sections first, because one un-split stage for a
+    near-unit-circle pole cluster (e.g. order-4 lowpass at 40Hz/96kHz)
+    has ~1e11 internal gain, which amplifies FFT rounding past any
+    reasonable tolerance. The zero-*input* transient from filtfilt's
+    initial conditions is kept as an actual sample-by-sample recursion on
+    purpose — folding it into the convolution path needs the same ~1e11
+    of cancellation, catastrophic in floating point, while the recursion
+    only ever holds the bounded net state; it's short (transient decays
+    within the same few thousand samples) so the loop cost is negligible.
+  - `dsp.py`'s `butter()` caches the exact zeros/poles it designs, keyed
+    by the resulting `(b, a)` bytes. `filtfilt`/`_make_sos` look them up
+    from there rather than recomputing via `np.roots(a)` — a Butterworth
+    lowpass has a repeated root (e.g. a quadruple zero at −1), and
+    `np.roots` on a repeated root is only accurate to about
+    `eps**(1/multiplicity)` ≈ 1e-4, nowhere near float64 precision. If a
+    filter design not created by this `butter()` needs `filtfilt`, add it
+    to the cache the same way rather than trusting the `np.roots`
+    fallback for anything with repeated/near-repeated roots.
+  - `master.py` stubs `sys.modules['scipy']`/`['scipy.signal']` with a
+    tiny shim backed by `dsp.lfilter` **before** `import pyloudnorm` —
+    pyloudnorm's K-weighting filter (`iirfilter.py`) does
+    `import scipy.signal` and calls `scipy.signal.lfilter` directly. This
+    is the one place `dsp.py`'s `np.roots`-based fallback path actually
+    runs (pyloudnorm's biquads have simple well-separated roots, so it's
+    fine there) rather than the cached-zpk path.
 - **DMG uses `format: ULFO`** (lzfse) — compresses better than the
   default.
 
