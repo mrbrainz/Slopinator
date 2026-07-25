@@ -37,18 +37,15 @@ ipcMain.handle('pick-output-path', async (_event, defaultName) => {
   return result.canceled ? null : result.filePath;
 });
 
-ipcMain.handle('run-master', async (event, { inputPath, outputPath, format }) => {
-  const args = ['-u', MASTER_PY, inputPath, outputPath];
-  if (format) args.push('--format', format);
-
+function runMasterPy(scriptArgs, sender) {
   const sendLog = (stream, text) => {
-    if (!event.sender.isDestroyed()) {
-      event.sender.send('master-log', { stream, text });
+    if (!sender.isDestroyed()) {
+      sender.send('master-log', { stream, text });
     }
   };
 
   return new Promise((resolve) => {
-    const proc = spawn(PYTHON_BIN, args);
+    const proc = spawn(PYTHON_BIN, ['-u', MASTER_PY, ...scriptArgs]);
     let stderr = '';
 
     proc.stdout.on('data', (chunk) => {
@@ -68,6 +65,51 @@ ipcMain.handle('run-master', async (event, { inputPath, outputPath, format }) =>
       resolve({ success: code === 0, code, stderr });
     });
   });
+}
+
+const BATCH_EXTENSIONS = ['wav', 'aiff', 'aif', 'flac'];
+
+ipcMain.handle('run-master', async (event, { inputPath, outputPath, format }) => {
+  const args = [inputPath, outputPath];
+  if (format) args.push('--format', format);
+  return runMasterPy(args, event.sender);
+});
+
+ipcMain.handle('classify-path', async (_event, targetPath) => {
+  try {
+    return fs.statSync(targetPath).isDirectory() ? 'directory' : 'file';
+  } catch {
+    return null;
+  }
+});
+
+ipcMain.handle('run-master-batch', async (event, { dirPath, format }) => {
+  const entries = fs.readdirSync(dirPath);
+  const outdir = path.join(dirPath, 'mastered');
+
+  let ranAny = false;
+  let allSucceeded = true;
+  let stderr = '';
+
+  for (const ext of BATCH_EXTENSIONS) {
+    const hasMatch = entries.some((f) => f.toLowerCase().endsWith(`.${ext}`));
+    if (!hasMatch) continue;
+
+    ranAny = true;
+    const args = ['--batch', path.join(dirPath, `*.${ext}`), '--outdir', outdir];
+    if (format) args.push('--format', format);
+
+    const result = await runMasterPy(args, event.sender);
+    if (!result.success) {
+      allSucceeded = false;
+      stderr += result.stderr;
+    }
+  }
+
+  if (!ranAny) {
+    return { success: false, stderr: 'No audio files (wav/aiff/flac) found in that folder.' };
+  }
+  return { success: allSucceeded, stderr, outdir };
 });
 
 app.whenReady().then(createWindow);

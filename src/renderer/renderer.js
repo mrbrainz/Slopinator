@@ -1,3 +1,6 @@
+document.addEventListener('dragover', (e) => e.preventDefault());
+document.addEventListener('drop', (e) => e.preventDefault());
+
 const inputPathEl = document.getElementById('input-path');
 const outputPathEl = document.getElementById('output-path');
 const formatEl = document.getElementById('format');
@@ -35,9 +38,8 @@ document.getElementById('pick-output').addEventListener('click', async () => {
   updateMasterButton();
 });
 
-masterBtn.addEventListener('click', async () => {
+async function runWithLogging(runFn, onDone) {
   masterBtn.disabled = true;
-  statusEl.textContent = 'Mastering…';
   logEl.textContent = '';
 
   const unsubscribe = window.slopinator.onMasterLog(({ text }) => {
@@ -45,16 +47,59 @@ masterBtn.addEventListener('click', async () => {
     logEl.scrollTop = logEl.scrollHeight;
   });
 
-  const result = await window.slopinator.runMaster({
-    inputPath,
-    outputPath,
-    format: formatEl.value,
-  });
+  const result = await runFn();
   unsubscribe();
-
-  statusEl.textContent = result.success
-    ? `Done: ${outputPath}`
-    : `Failed (exit ${result.code}): ${result.stderr.trim() || 'unknown error'}`;
-
+  onDone(result);
   updateMasterButton();
+}
+
+masterBtn.addEventListener('click', () => {
+  statusEl.textContent = 'Mastering…';
+  runWithLogging(
+    () => window.slopinator.runMaster({ inputPath, outputPath, format: formatEl.value }),
+    (result) => {
+      statusEl.textContent = result.success
+        ? `Done: ${outputPath}`
+        : `Failed (exit ${result.code}): ${result.stderr.trim() || 'unknown error'}`;
+    }
+  );
+});
+
+const dropZone = document.getElementById('drop-zone');
+
+['dragenter', 'dragover'].forEach((evt) =>
+  dropZone.addEventListener(evt, (e) => {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+  })
+);
+
+['dragleave', 'drop'].forEach((evt) =>
+  dropZone.addEventListener(evt, (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+  })
+);
+
+dropZone.addEventListener('drop', async (e) => {
+  const dropped = e.dataTransfer.files[0];
+  if (!dropped) return;
+  const droppedPath = dropped.path;
+
+  const kind = await window.slopinator.classifyPath(droppedPath);
+  if (kind === 'directory') {
+    statusEl.textContent = `Mastering folder: ${droppedPath}…`;
+    runWithLogging(
+      () => window.slopinator.runMasterBatch({ dirPath: droppedPath, format: formatEl.value }),
+      (result) => {
+        statusEl.textContent = result.success
+          ? `Done: ${result.outdir}`
+          : `Failed: ${result.stderr.trim() || 'unknown error'}`;
+      }
+    );
+  } else if (kind === 'file') {
+    inputPath = droppedPath;
+    inputPathEl.value = inputPath;
+    updateMasterButton();
+  }
 });

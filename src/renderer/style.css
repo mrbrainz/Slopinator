@@ -8,6 +8,22 @@ body {
   margin-bottom: 16px;
 }
 
+#drop-zone {
+  border: 2px dashed #aaa;
+  border-radius: 6px;
+  padding: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+#drop-zone.drag-over {
+  border-color: #4a90d9;
+  background: #f0f6fc;
+  color: #333;
+}
+
 label {
   display: block;
   font-size: 13px;
