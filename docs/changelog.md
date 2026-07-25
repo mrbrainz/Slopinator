@@ -28,6 +28,9 @@ All notable changes to this project are documented here. Format is based on
   are frozen into a standalone `master-bin` binary via PyInstaller
   (`scripts/freeze-python.sh`, run automatically as a `prepack`/`predist`
   hook) — no system Python or venv required at runtime (#7)
+- `master.py --analyze <file>` measures integrated LUFS, oversampled true
+  peak, duration, sample rate, channels, and bit depth of an unprocessed
+  file and prints it as JSON, without running the mastering chain (#9)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global
