@@ -1,13 +1,13 @@
 document.addEventListener('dragover', (e) => e.preventDefault());
 document.addEventListener('drop', (e) => e.preventDefault());
 
+function activateTab(screenName) {
+  document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.screen === screenName));
+  document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === `screen-${screenName}`));
+}
+
 document.querySelectorAll('.tab').forEach((tab) => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
-    document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
-    tab.classList.add('active');
-    document.getElementById(`screen-${tab.dataset.screen}`).classList.add('active');
-  });
+  tab.addEventListener('click', () => activateTab(tab.dataset.screen));
 });
 
 const inputPathEl = document.getElementById('input-path');
@@ -30,12 +30,21 @@ function defaultOutputName(path) {
   return dot === -1 ? `${base}-mastered` : `${base.slice(0, dot)}-mastered${base.slice(dot)}`;
 }
 
+function selectChainInput(path) {
+  inputPath = path;
+  inputPathEl.value = inputPath;
+  updateMasterButton();
+}
+
+window.selectChainInputAndNavigate = (path) => {
+  selectChainInput(path);
+  activateTab('chain');
+};
+
 document.getElementById('pick-input').addEventListener('click', async () => {
   const picked = await window.slopinator.pickInputFile();
   if (!picked) return;
-  inputPath = picked;
-  inputPathEl.value = inputPath;
-  updateMasterButton();
+  selectChainInput(picked);
 });
 
 document.getElementById('pick-output').addEventListener('click', async () => {
@@ -107,8 +116,6 @@ dropZone.addEventListener('drop', async (e) => {
       }
     );
   } else if (kind === 'file') {
-    inputPath = droppedPath;
-    inputPathEl.value = inputPath;
-    updateMasterButton();
+    selectChainInput(droppedPath);
   }
 });

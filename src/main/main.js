@@ -184,6 +184,61 @@ ipcMain.handle('get-peaks', async (_event, { filePath, buckets }) => {
   return runMasterJson(args);
 });
 
+function expandAudioPaths(paths) {
+  const files = [];
+  for (const p of paths) {
+    let isDir = false;
+    try {
+      isDir = fs.statSync(p).isDirectory();
+    } catch {
+      continue;
+    }
+    if (isDir) {
+      for (const entry of fs.readdirSync(p)) {
+        const ext = path.extname(entry).slice(1).toLowerCase();
+        if (BATCH_EXTENSIONS.includes(ext)) files.push(path.join(p, entry));
+      }
+    } else {
+      files.push(p);
+    }
+  }
+  return files;
+}
+
+ipcMain.handle('pick-import-files', async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openFile', 'multiSelections'],
+    filters: [{ name: 'Audio', extensions: BATCH_EXTENSIONS }],
+  });
+  return result.canceled ? [] : result.filePaths;
+});
+
+ipcMain.handle('library-import', async (_event, paths) => {
+  const dir = userDataDir();
+  let tracks = library.loadLibrary(dir);
+
+  for (const filePath of expandAudioPaths(paths)) {
+    tracks = library.addTrack(dir, filePath);
+  }
+
+  for (const track of tracks.filter((t) => t.status === 'raw')) {
+    const result = await runMasterJson(['--analyze', track.path]);
+    if (!result.success) continue;
+    const { duration_sec, sample_rate, channels, bit_depth, lufs, true_peak_db } = result.data;
+    tracks = library.updateTrack(dir, track.id, {
+      durationSec: duration_sec,
+      sampleRate: sample_rate,
+      channels,
+      bitDepth: bit_depth,
+      lufs,
+      truePeakDb: true_peak_db,
+      status: 'needs_mastering',
+    });
+  }
+
+  return tracks;
+});
+
 app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {

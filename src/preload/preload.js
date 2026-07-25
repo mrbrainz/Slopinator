@@ -13,6 +13,8 @@ contextBridge.exposeInMainWorld('slopinator', {
   libraryRemove: (id) => ipcRenderer.invoke('library-remove', id),
   libraryAnalyze: (id) => ipcRenderer.invoke('library-analyze', id),
   getPeaks: (filePath, buckets) => ipcRenderer.invoke('get-peaks', { filePath, buckets }),
+  pickImportFiles: () => ipcRenderer.invoke('pick-import-files'),
+  libraryImport: (paths) => ipcRenderer.invoke('library-import', paths),
   onMasterLog: (callback) => {
     const listener = (_event, payload) => callback(payload);
     ipcRenderer.on('master-log', listener);
