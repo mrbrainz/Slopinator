@@ -24,12 +24,20 @@ All notable changes to this project are documented here. Format is based on
   (`dist/mac-arm64/Slopinator.app` + `.dmg`), bundling `master.py` as an
   extra resource and auto ad-hoc-signing via `scripts/sign-mac.sh` so
   Gatekeeper doesn't trash the packaged app (#6)
+- The distributable is now fully self-contained: `master.py` and its deps
+  are frozen into a standalone `master-bin` binary via PyInstaller
+  (`scripts/freeze-python.sh`, run automatically as a `prepack`/`predist`
+  hook) — no system Python or venv required at runtime (#7)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global
   `pip install`, since Homebrew Python blocks global installs (#3)
 
 ### Fixed
+- `master.py` now line-buffers stdout explicitly
+  (`sys.stdout.reconfigure(line_buffering=True)`), since plain `-u` /
+  `PYTHONUNBUFFERED` didn't reach a PyInstaller-frozen binary's stdout and
+  silently broke the live progress log (#4) for packaged builds (#7)
 
 ## [0.1.0] - 2026-07-25
 

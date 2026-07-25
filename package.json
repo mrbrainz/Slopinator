@@ -6,8 +6,11 @@
   "main": "src/main/main.js",
   "scripts": {
     "start": "electron .",
+    "freeze-python": "bash scripts/freeze-python.sh",
+    "prepack": "npm run freeze-python",
     "pack": "electron-builder --dir",
     "postpack": "bash scripts/sign-mac.sh",
+    "predist": "npm run freeze-python",
     "dist": "electron-builder",
     "postdist": "bash scripts/sign-mac.sh"
   },
@@ -26,7 +29,7 @@
       "package.json"
     ],
     "extraResources": [
-      { "from": "master.py", "to": "master.py" }
+      { "from": "build/pyinstaller/master", "to": "master-bin" }
     ],
     "mac": {
       "category": "public.app-category.music",
