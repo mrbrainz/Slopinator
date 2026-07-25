@@ -207,6 +207,30 @@ def analyze_file(path, oversample=4):
     }
 
 
+def extract_peaks(path, buckets=200):
+    """Downsample a file to `buckets` peak values (0-1) for waveform
+    display — max absolute sample across all channels per bucket, so quiet
+    single-channel content in a stereo file isn't masked by averaging."""
+    data, sr = load_audio(path)
+    combined = np.max(np.abs(data), axis=1)  # (samples,)
+
+    n = len(combined)
+    buckets = max(1, min(buckets, n)) if n > 0 else 1
+    edges = np.linspace(0, n, buckets + 1, dtype=int)
+
+    peaks = []
+    for i in range(buckets):
+        lo, hi = edges[i], edges[i + 1]
+        segment = combined[lo:hi] if hi > lo else combined[lo:lo + 1]
+        peaks.append(round(float(np.max(segment)), 4) if segment.size else 0.0)
+
+    return {
+        "path": path,
+        "duration_sec": round(n / sr, 2),
+        "peaks": peaks,
+    }
+
+
 PRESETS = {
     "streaming": -14.0,
     "club": -8.0,
@@ -242,10 +266,18 @@ def main():
     parser.add_argument("--bit-depth", default="PCM_16", choices=["PCM_16", "PCM_24", "FLOAT"])
     parser.add_argument("--analyze", action="store_true",
                          help="Measure LUFS/true-peak/format of 'input' and print JSON, without mastering it")
+    parser.add_argument("--peaks", action="store_true",
+                         help="Print a JSON array of downsampled peak values for 'input', for waveform display")
+    parser.add_argument("--buckets", type=int, default=200,
+                         help="Number of peak values for --peaks (default 200)")
     args = parser.parse_args()
 
     if args.analyze:
         print(json.dumps(analyze_file(args.input)))
+        return
+
+    if args.peaks:
+        print(json.dumps(extract_peaks(args.input, args.buckets)))
         return
 
     target = args.target if args.target is not None else PRESETS.get(args.format, -14.0)

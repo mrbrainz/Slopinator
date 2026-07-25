@@ -124,9 +124,9 @@ ipcMain.handle('run-master-batch', async (event, { dirPath, format }) => {
   return { success: allSucceeded, stderr, outdir };
 });
 
-function runMasterAnalyze(filePath) {
+function runMasterJson(scriptArgs) {
   return new Promise((resolve) => {
-    const proc = spawn(MASTER_CMD, [...MASTER_PREFIX_ARGS, '--analyze', filePath]);
+    const proc = spawn(MASTER_CMD, [...MASTER_PREFIX_ARGS, ...scriptArgs]);
     let stdout = '';
     let stderr = '';
 
@@ -145,7 +145,7 @@ function runMasterAnalyze(filePath) {
       try {
         resolve({ success: true, data: JSON.parse(stdout.trim()) });
       } catch (err) {
-        resolve({ success: false, error: `failed to parse analyze output: ${err.message}` });
+        resolve({ success: false, error: `failed to parse output: ${err.message}` });
       }
     });
   });
@@ -162,7 +162,7 @@ ipcMain.handle('library-analyze', async (_event, id) => {
   const track = library.loadLibrary(userDataDir()).find((t) => t.id === id);
   if (!track) return { success: false, error: 'track not found' };
 
-  const result = await runMasterAnalyze(track.path);
+  const result = await runMasterJson(['--analyze', track.path]);
   if (!result.success) return result;
 
   const { duration_sec, sample_rate, channels, bit_depth, lufs, true_peak_db } = result.data;
@@ -176,6 +176,12 @@ ipcMain.handle('library-analyze', async (_event, id) => {
     status: 'needs_mastering',
   });
   return { success: true, tracks };
+});
+
+ipcMain.handle('get-peaks', async (_event, { filePath, buckets }) => {
+  const args = ['--peaks', filePath];
+  if (buckets) args.push('--buckets', String(buckets));
+  return runMasterJson(args);
 });
 
 app.whenReady().then(createWindow);

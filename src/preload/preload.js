@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('slopinator', {
   libraryUpdate: (id, patch) => ipcRenderer.invoke('library-update', { id, patch }),
   libraryRemove: (id) => ipcRenderer.invoke('library-remove', id),
   libraryAnalyze: (id) => ipcRenderer.invoke('library-analyze', id),
+  getPeaks: (filePath, buckets) => ipcRenderer.invoke('get-peaks', { filePath, buckets }),
   onMasterLog: (callback) => {
     const listener = (_event, payload) => callback(payload);
     ipcRenderer.on('master-log', listener);
