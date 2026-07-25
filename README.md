@@ -84,18 +84,23 @@ Or set an exact value with `--target -10.5`.
 
 ```bash
 npm install
-npm run dist        # or `npm run pack` for an unsigned .app without a .dmg
+npm run dist        # dist/Slopinator-<version>-arm64.dmg
+npm run pack        # or just dist/mac-arm64/Slopinator.app, no .dmg
 ```
 
-This produces a self-contained `dist/mac-arm64/Slopinator.app` (+ a `.dmg`
-for `dist`) — no system Python or venv required at runtime. Two hooks run
-automatically:
+This produces a self-contained app — no system Python or venv required at
+runtime. Two hooks run automatically as part of `electron-builder`'s own
+build lifecycle (both fire for `pack` and `dist`):
 
 - `prepack`/`predist` (`scripts/freeze-python.sh`) freezes `master.py` and
   its dependencies into a standalone binary with PyInstaller (installed into
   `.venv` on first use), bundled as the `master-bin` extra resource.
-- `postpack`/`postdist` (`scripts/sign-mac.sh`) ad-hoc re-signs the whole
-  app — without it, Gatekeeper trashes it as "malware" the same way it does
+- `afterSign` (`scripts/afterSign.js`, wired via the `build.afterSign` config
+  in `package.json`) ad-hoc re-signs the app. This has to run as
+  electron-builder's own `afterSign` hook rather than a `postpack`/`postdist`
+  npm script — a npm post-script fires only after the `.dmg` is already
+  built, so the `.dmg` would still contain the old, insufficient signature.
+  Without this, Gatekeeper trashes the app as "malware" the same way it does
   the dev `Electron.app` binary (see `docs/context.md`).
 
 Ad-hoc signing satisfies Gatekeeper on this machine but isn't notarized, so

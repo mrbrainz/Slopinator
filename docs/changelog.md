@@ -38,6 +38,13 @@ All notable changes to this project are documented here. Format is based on
   (`sys.stdout.reconfigure(line_buffering=True)`), since plain `-u` /
   `PYTHONUNBUFFERED` didn't reach a PyInstaller-frozen binary's stdout and
   silently broke the live progress log (#4) for packaged builds (#7)
+- The signed `.dmg` from `npm run dist` was actually shipping an unsigned
+  app: the `postpack`/`postdist` signing script (#6) ran after
+  electron-builder had already packed the `.app` into the `.dmg`, so the
+  `.dmg` kept the old insufficient signature no matter what got signed
+  afterward. Replaced with `scripts/afterSign.js`, wired through
+  electron-builder's own `build.afterSign` hook so signing happens before
+  the `.dmg` is built (#8)
 
 ## [0.1.0] - 2026-07-25
 

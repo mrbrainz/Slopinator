@@ -37,13 +37,21 @@ I want to create a fully fledged Electron app
   Do this before the first `npm start` / `electron .` in a clean checkout or
   after any `npm install` that touches the `electron` package.
 - **Packaged builds (`npm run pack` / `npm run dist`) hit the same Gatekeeper
-  issue.** `scripts/sign-mac.sh` runs automatically as a `postpack`/`postdist`
-  npm hook and ad-hoc re-signs `dist/**/*.app` — no manual step needed. If a
-  packaged app still gets trashed, check the hook actually ran (npm skips
-  `post<script>` hooks if the main script exits non-zero).
+  issue.** `scripts/afterSign.js` runs automatically, wired via
+  electron-builder's own `build.afterSign` config in `package.json`, and
+  ad-hoc re-signs the app — no manual step needed.
+- **Signing must happen via electron-builder's `afterSign` hook, not a
+  `postpack`/`postdist` npm script.** We shipped it as a npm post-script
+  first (#6/#7) and it silently produced broken `.dmg`s: npm post-scripts
+  only run after the *entire* build finishes, but electron-builder packs the
+  `.app` into the `.dmg` before that — so the `.dmg` had already baked in
+  the old, insufficient signature by the time the npm hook ran and re-signed
+  the loose `.app` sitting next to it. Always verify a `.dmg`'s actual
+  contents after touching signing (`hdiutil attach` it, `codesign -dv` the
+  mounted `.app`), not just the loose build output.
 - **An unsigned `master-bin` binary (PyInstaller output) is ~24s slow on its
   very first run** — that's macOS scanning its ~600 bundled dylibs, not an
-  actual perf issue (subsequent runs are <1s). `sign-mac.sh` signs it along
+  actual perf issue (subsequent runs are <1s). `afterSign.js` signs it along
   with the rest of the app (`--deep`), which avoids this for end users.
 - **PyInstaller-frozen `master.py` buffers stdout fully unless explicitly
   line-buffered in the script itself** (`sys.stdout.reconfigure(line_buffering=True)`
