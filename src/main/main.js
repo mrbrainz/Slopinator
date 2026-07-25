@@ -3,8 +3,11 @@ const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
 
-const MASTER_PY = path.join(__dirname, '../../master.py');
-const VENV_PYTHON = path.join(__dirname, '../../.venv/bin/python3');
+const PROJECT_ROOT = app.isPackaged
+  ? process.resourcesPath
+  : path.join(__dirname, '../..');
+const MASTER_PY = path.join(PROJECT_ROOT, 'master.py');
+const VENV_PYTHON = path.join(PROJECT_ROOT, '.venv/bin/python3');
 const PYTHON_BIN = fs.existsSync(VENV_PYTHON) ? VENV_PYTHON : 'python3';
 
 function createWindow() {
