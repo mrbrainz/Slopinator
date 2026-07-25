@@ -15,6 +15,8 @@ All notable changes to this project are documented here. Format is based on
 - Wired the Master button to `master.py` via a spawned child process; app
   auto-detects a project-local `.venv/bin/python3` if present, falling back
   to plain `python3` (#3)
+- Live mastering progress log in the UI, streamed from `master.py`'s
+  stdout/stderr as it runs (#4)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global

@@ -37,26 +37,35 @@ ipcMain.handle('pick-output-path', async (_event, defaultName) => {
   return result.canceled ? null : result.filePath;
 });
 
-ipcMain.handle('run-master', async (_event, { inputPath, outputPath, format }) => {
-  const args = [MASTER_PY, inputPath, outputPath];
+ipcMain.handle('run-master', async (event, { inputPath, outputPath, format }) => {
+  const args = ['-u', MASTER_PY, inputPath, outputPath];
   if (format) args.push('--format', format);
+
+  const sendLog = (stream, text) => {
+    if (!event.sender.isDestroyed()) {
+      event.sender.send('master-log', { stream, text });
+    }
+  };
 
   return new Promise((resolve) => {
     const proc = spawn(PYTHON_BIN, args);
-    let stdout = '';
     let stderr = '';
 
     proc.stdout.on('data', (chunk) => {
-      stdout += chunk;
+      sendLog('stdout', chunk.toString());
     });
     proc.stderr.on('data', (chunk) => {
       stderr += chunk;
+      sendLog('stderr', chunk.toString());
     });
     proc.on('error', (err) => {
-      resolve({ success: false, stdout, stderr: `${stderr}\n${err.message}` });
+      const message = `${err.message}\n`;
+      stderr += message;
+      sendLog('stderr', message);
+      resolve({ success: false, stderr });
     });
     proc.on('close', (code) => {
-      resolve({ success: code === 0, code, stdout, stderr });
+      resolve({ success: code === 0, code, stderr });
     });
   });
 });

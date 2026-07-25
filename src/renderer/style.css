@@ -44,3 +44,20 @@ button {
   font-size: 13px;
   color: #666;
 }
+
+#log {
+  background: #111;
+  color: #ddd;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 12px;
+  padding: 10px;
+  height: 160px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+#log:empty {
+  display: none;
+}

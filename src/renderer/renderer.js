@@ -3,6 +3,7 @@ const outputPathEl = document.getElementById('output-path');
 const formatEl = document.getElementById('format');
 const masterBtn = document.getElementById('master-btn');
 const statusEl = document.getElementById('status');
+const logEl = document.getElementById('log');
 
 let inputPath = null;
 let outputPath = null;
@@ -37,12 +38,19 @@ document.getElementById('pick-output').addEventListener('click', async () => {
 masterBtn.addEventListener('click', async () => {
   masterBtn.disabled = true;
   statusEl.textContent = 'Mastering…';
+  logEl.textContent = '';
+
+  const unsubscribe = window.slopinator.onMasterLog(({ text }) => {
+    logEl.textContent += text;
+    logEl.scrollTop = logEl.scrollHeight;
+  });
 
   const result = await window.slopinator.runMaster({
     inputPath,
     outputPath,
     format: formatEl.value,
   });
+  unsubscribe();
 
   statusEl.textContent = result.success
     ? `Done: ${outputPath}`
