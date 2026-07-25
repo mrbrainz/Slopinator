@@ -34,6 +34,19 @@ document.getElementById('pick-output').addEventListener('click', async () => {
   updateMasterButton();
 });
 
-masterBtn.addEventListener('click', () => {
-  statusEl.textContent = `Would master "${inputPath}" -> "${outputPath}" (preset: ${formatEl.value}). Wiring to master.py is next.`;
+masterBtn.addEventListener('click', async () => {
+  masterBtn.disabled = true;
+  statusEl.textContent = 'Mastering…';
+
+  const result = await window.slopinator.runMaster({
+    inputPath,
+    outputPath,
+    format: formatEl.value,
+  });
+
+  statusEl.textContent = result.success
+    ? `Done: ${outputPath}`
+    : `Failed (exit ${result.code}): ${result.stderr.trim() || 'unknown error'}`;
+
+  updateMasterButton();
 });

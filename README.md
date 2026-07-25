@@ -15,8 +15,13 @@ want to feed it MP3s — it uses `soundfile` directly for
 WAV/AIFF/FLAC).
 
 ```bash
-pip install numpy scipy soundfile pyloudnorm pydub
+python3 -m venv .venv
+.venv/bin/pip install numpy scipy soundfile pyloudnorm pydub
 ```
+
+(A venv is required on Homebrew Python — it blocks global `pip install`.
+The Electron app auto-detects `.venv/bin/python3` if present, falling back
+to plain `python3` otherwise.)
 
 ## Usage
 
