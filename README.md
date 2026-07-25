@@ -49,6 +49,16 @@ peaks), duration, sample rate, channels, and bit depth as one JSON line.
 `lufs`/`true_peak_db` are `null` for silent/near-silent input rather than
 `-Infinity`.
 
+**Peaks (waveform data for display):**
+```bash
+python3 master.py --peaks input.wav --buckets 200
+# {"path": "input.wav", "duration_sec": 214.3, "peaks": [0.12, 0.34, ...]}
+```
+Prints `buckets` peak values (0-1, max absolute sample across all channels
+per bucket — so a quiet channel isn't masked by averaging), for rendering
+a waveform without a full-resolution decode. `--buckets` defaults to 200
+and is clamped to the file's actual sample count.
+
 ## Loudness presets (`--format`)
 
 | Preset       | Target LUFS |

@@ -43,6 +43,12 @@ All notable changes to this project are documented here. Format is based on
   drag-drop, live log) moved into the Chain view tab, restyled but
   functionally unchanged; Library/Compare/Export are placeholders until
   their own to-dos land (#11)
+- `master.py --peaks <file> --buckets N` prints N downsampled peak values
+  (0-1) for waveform display, without a full-resolution decode — max
+  absolute sample across all channels per bucket, so a quiet channel isn't
+  masked by averaging. New `get-peaks` IPC handler exposed as
+  `window.slopinator.getPeaks()`. Not wired to any UI yet — foundational for
+  Chain view and Compare's real waveforms (#12)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global
