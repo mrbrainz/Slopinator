@@ -7,6 +7,10 @@ All notable changes to this project are documented here. Format is based on
 ## [Unreleased]
 
 ### Added
+- Electron project scaffold: main process, preload, minimal renderer, and
+  electron-builder packaging config alongside the existing `master.py`
+  chain (#1)
+
 ### Changed
 ### Fixed
 

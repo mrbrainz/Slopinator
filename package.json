@@ -1,0 +1,34 @@
+{
+  "name": "slopinator",
+  "productName": "Slopinator",
+  "version": "0.1.0",
+  "description": "Audio mastering app wrapping the master.py chain",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "author": "",
+  "license": "UNLICENSED",
+  "private": true,
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.slopinator.app",
+    "productName": "Slopinator",
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.music",
+      "target": "dmg"
+    },
+    "directories": {
+      "output": "dist"
+    }
+  }
+}

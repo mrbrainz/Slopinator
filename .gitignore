@@ -6,3 +6,5 @@ __pycache__/
 *.flac
 *.mp3
 mastered/
+node_modules/
+dist/
