@@ -30,12 +30,14 @@
       { "from": "build/pyinstaller/master", "to": "master-bin" }
     ],
     "afterSign": "scripts/afterSign.js",
+    "icon": "assets/icon.png",
     "mac": {
       "category": "public.app-category.music",
       "target": "dmg"
     },
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "assets"
     }
   }
 }

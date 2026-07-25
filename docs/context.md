@@ -58,6 +58,12 @@ I want to create a fully fledged Electron app
   at the top of `main()`). Plain `python3 -u` / `PYTHONUNBUFFERED=1` don't
   reliably reach a frozen binary's stdout — this broke the live progress log
   (#4) for packaged builds until fixed directly in `master.py`.
+- **electron-builder's default build-resources directory is `build/`, which
+  collides with `scripts/freeze-python.sh`'s PyInstaller output
+  (`build/pyinstaller*`, gitignored).** App icons etc. go in `assets/`
+  instead — `package.json`'s `build.directories.buildResources` is set to
+  `"assets"` to match. Don't put build resources in `build/`; they'd
+  silently never get committed.
 
 ## Token efficiency (priority)
 
