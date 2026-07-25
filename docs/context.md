@@ -41,6 +41,15 @@ I want to create a fully fledged Electron app
   npm hook and ad-hoc re-signs `dist/**/*.app` — no manual step needed. If a
   packaged app still gets trashed, check the hook actually ran (npm skips
   `post<script>` hooks if the main script exits non-zero).
+- **An unsigned `master-bin` binary (PyInstaller output) is ~24s slow on its
+  very first run** — that's macOS scanning its ~600 bundled dylibs, not an
+  actual perf issue (subsequent runs are <1s). `sign-mac.sh` signs it along
+  with the rest of the app (`--deep`), which avoids this for end users.
+- **PyInstaller-frozen `master.py` buffers stdout fully unless explicitly
+  line-buffered in the script itself** (`sys.stdout.reconfigure(line_buffering=True)`
+  at the top of `main()`). Plain `python3 -u` / `PYTHONUNBUFFERED=1` don't
+  reliably reach a frozen binary's stdout — this broke the live progress log
+  (#4) for packaged builds until fixed directly in `master.py`.
 
 ## Token efficiency (priority)
 

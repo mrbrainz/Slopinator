@@ -187,6 +187,12 @@ PRESETS = {
 
 
 def main():
+    # Line-buffer stdout so progress prints stream to callers piping our
+    # output (e.g. the Electron UI) instead of arriving in one final batch.
+    # Plain -u/PYTHONUNBUFFERED doesn't reliably reach this when frozen by
+    # PyInstaller, so it's set explicitly here.
+    sys.stdout.reconfigure(line_buffering=True)
+
     parser = argparse.ArgumentParser(
         description="Simple automated mastering chain.",
         epilog="Single file:  python3 master.py in.wav out.wav\n"

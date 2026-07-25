@@ -8,4 +8,6 @@ __pycache__/
 mastered/
 node_modules/
 dist/
+build/
 .venv/
+*.spec

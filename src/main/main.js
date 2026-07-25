@@ -3,12 +3,20 @@ const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
 
-const PROJECT_ROOT = app.isPackaged
-  ? process.resourcesPath
-  : path.join(__dirname, '../..');
-const MASTER_PY = path.join(PROJECT_ROOT, 'master.py');
-const VENV_PYTHON = path.join(PROJECT_ROOT, '.venv/bin/python3');
-const PYTHON_BIN = fs.existsSync(VENV_PYTHON) ? VENV_PYTHON : 'python3';
+// Packaged builds bundle a PyInstaller-frozen master-bin binary (no system
+// Python required). In dev we run master.py directly via a project-local
+// .venv if present, falling back to plain python3.
+let MASTER_CMD, MASTER_PREFIX_ARGS;
+if (app.isPackaged) {
+  MASTER_CMD = path.join(process.resourcesPath, 'master-bin/master');
+  MASTER_PREFIX_ARGS = [];
+} else {
+  const PROJECT_ROOT = path.join(__dirname, '../..');
+  const MASTER_PY = path.join(PROJECT_ROOT, 'master.py');
+  const VENV_PYTHON = path.join(PROJECT_ROOT, '.venv/bin/python3');
+  MASTER_CMD = fs.existsSync(VENV_PYTHON) ? VENV_PYTHON : 'python3';
+  MASTER_PREFIX_ARGS = ['-u', MASTER_PY];
+}
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -48,7 +56,7 @@ function runMasterPy(scriptArgs, sender) {
   };
 
   return new Promise((resolve) => {
-    const proc = spawn(PYTHON_BIN, ['-u', MASTER_PY, ...scriptArgs]);
+    const proc = spawn(MASTER_CMD, [...MASTER_PREFIX_ARGS, ...scriptArgs]);
     let stderr = '';
 
     proc.stdout.on('data', (chunk) => {
