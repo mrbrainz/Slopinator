@@ -31,9 +31,13 @@
     ],
     "afterSign": "scripts/afterSign.js",
     "icon": "assets/icon.png",
+    "electronLanguages": ["en"],
     "mac": {
       "category": "public.app-category.music",
       "target": "dmg"
+    },
+    "dmg": {
+      "format": "ULFO"
     },
     "directories": {
       "output": "dist",

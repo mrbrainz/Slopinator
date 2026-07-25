@@ -65,6 +65,37 @@ I want to create a fully fledged Electron app
   `"assets"` to match. Don't put build resources in `build/`; they'd
   silently never get committed.
 
+## App size (approach + facts, PR #22)
+
+Baseline was a 311MB .app / 122MB .dmg; now 263MB / 105MB. Where the
+bytes live and what was done:
+
+- **~170MB: Electron Framework itself.** The floor for any Electron app —
+  untouchable without leaving Electron.
+- **54MB was Chromium locale packs** (55 × ~1.3MB `.lproj` inside
+  `Electron Framework.framework`). `scripts/afterSign.js` deletes all but
+  `en.lproj` before signing. Note: the `electronLanguages` option in
+  `package.json` only prunes the *empty* `.lproj` stubs in the app's own
+  `Contents/Resources` — it never touches the framework's real packs,
+  which is why the manual prune exists.
+- **75MB: the PyInstaller `master-bin`** (was 84MB). `freeze-python.sh`
+  passes `--optimize 2` (strips docstrings) and `--exclude-module
+  ssl/_ssl/_hashlib` — proven unused by running all three modes
+  (master run, `--analyze`, `--peaks`) and checking `sys.modules`; this
+  drops libcrypto+libssl (6MB). **Before adding imports to `master.py`,
+  check they don't need the excluded modules** — the frozen binary will
+  fail at import time if they do (always rerun all three modes on a
+  packaged build after touching Python deps).
+- **scipy is 39MB of master-bin and can NOT be pruned by excludes**:
+  `import scipy.signal` transitively imports every heavy scipy
+  subpackage (stats, optimize, sparse, spatial…) at module level —
+  verified empirically. The only way to reclaim it is replacing the three
+  scipy calls (`butter`, `filtfilt`, `resample_poly`) with hand-rolled
+  numpy DSP, tracked as a to-do; don't waste time re-trying
+  `--exclude-module scipy.*`.
+- **DMG uses `format: ULFO`** (lzfse) — compresses better than the
+  default.
+
 ## Token efficiency (priority)
 
 - Don't re-read files you've seen; use `Read` with offset/limit and `grep`, not

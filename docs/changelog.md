@@ -132,6 +132,16 @@ All notable changes to this project are documented here. Format is based on
   element, so each can tell whether the currently loaded/playing file is
   actually its own before reacting to `onTimeUpdate`/`onEnded` (#18)
 
+### Changed (size)
+- Distributable shrunk from 311MB .app / 122MB .dmg to 263MB / 105MB:
+  pruned 54 Chromium locale packs from the Electron framework (all but
+  `en.lproj`, in `afterSign.js` before signing), excluded proven-unused
+  stdlib modules (`ssl`/`_ssl`/`_hashlib` → drops libcrypto/libssl) and
+  stripped docstrings (`--optimize 2`) in the PyInstaller freeze, and
+  switched the DMG to lzfse compression (`format: ULFO`). scipy (39MB)
+  can't be pruned by excludes — see the "App size" section in
+  `docs/context.md` and the numpy-DSP to-do (#22)
+
 ### Fixed
 - `master.py` now line-buffers stdout explicitly
   (`sys.stdout.reconfigure(line_buffering=True)`), since plain `-u` /
