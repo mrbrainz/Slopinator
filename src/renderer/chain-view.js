@@ -5,7 +5,6 @@
 
 const chainTrackNameEl = document.getElementById('chain-track-name');
 const chainTrackSubEl = document.getElementById('chain-track-sub');
-const inputPathEl = document.getElementById('input-path');
 const masterBtn = document.getElementById('master-btn');
 const statusEl = document.getElementById('status');
 const logEl = document.getElementById('log');
@@ -115,7 +114,7 @@ function presetChipsRow() {
   Object.entries(PRESETS).forEach(([name, lufs]) => {
     const chip = document.createElement('button');
     chip.className = 'chip' + (params.target === lufs ? ' on' : '');
-    chip.textContent = `${name} (${lufs} LUFS)`;
+    chip.textContent = `${name[0].toUpperCase()}${name.slice(1)} (${lufs} LUFS)`;
     chip.addEventListener('click', () => {
       params.target = lufs;
       renderRack();
@@ -348,7 +347,6 @@ function updateMasterButton() {
 function selectChainInput(path, trackId = null) {
   inputPath = path;
   currentTrackId = trackId;
-  inputPathEl.value = inputPath;
   chainTrackNameEl.textContent = path.split('/').pop();
   chainTrackSubEl.textContent = path;
   loadWaveform(path);
@@ -362,12 +360,6 @@ window.selectChainInputAndNavigate = (path, trackId) => {
 };
 
 window.getCurrentChainTrack = () => ({ trackId: currentTrackId, path: inputPath });
-
-document.getElementById('pick-input').addEventListener('click', async () => {
-  const picked = await window.slopinator.pickInputFile();
-  if (!picked) return;
-  selectChainInput(picked);
-});
 
 // --- mastering ---
 
@@ -419,43 +411,6 @@ masterBtn.addEventListener('click', async () => {
   );
 });
 
-const dropZone = document.getElementById('drop-zone');
-
-['dragenter', 'dragover'].forEach((evt) =>
-  dropZone.addEventListener(evt, (e) => {
-    e.preventDefault();
-    dropZone.classList.add('drag-over');
-  })
-);
-
-['dragleave', 'drop'].forEach((evt) =>
-  dropZone.addEventListener(evt, (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('drag-over');
-  })
-);
-
-dropZone.addEventListener('drop', async (e) => {
-  const dropped = e.dataTransfer.files[0];
-  if (!dropped) return;
-  const droppedPath = dropped.path;
-
-  const kind = await window.slopinator.classifyPath(droppedPath);
-  if (kind === 'directory') {
-    statusEl.textContent = `Mastering folder: ${droppedPath}…`;
-    runWithLogging(
-      () => window.slopinator.runMasterBatch({ dirPath: droppedPath, params }),
-      (result) => {
-        statusEl.textContent = result.success
-          ? `Done: ${result.outdir}`
-          : `Failed: ${result.stderr.trim() || 'unknown error'}`;
-      }
-    );
-  } else if (kind === 'file') {
-    selectChainInput(droppedPath);
-  }
-});
-
 // --- named chain presets ---
 // The mockup put "Save presets used" on the Export screen, but the rack
 // params live here — Export already re-uses each track's previewParams,
@@ -484,8 +439,19 @@ function renderPresetOptions(presets, selectedName = '') {
   presetDeleteBtn.disabled = !selectedName;
 }
 
-async function refreshPresets(selectedName = '') {
-  renderPresetOptions(await window.slopinator.presetsList(), selectedName);
+function applyPresetParams(presetParams) {
+  Object.assign(params, presetParams);
+  renderRack();
+  renderDetail();
+}
+
+// Defaults to "Club" on every launch (not the last-used selection) — see
+// docs/todos.md's Chain view redesign notes.
+async function refreshPresets(selectedName = 'Club') {
+  const presets = await window.slopinator.presetsList();
+  const selected = presets.find((p) => p.name === selectedName);
+  renderPresetOptions(presets, selected ? selectedName : '');
+  if (selected) applyPresetParams(selected.params);
 }
 
 presetSelectEl.addEventListener('change', async () => {
@@ -494,9 +460,7 @@ presetSelectEl.addEventListener('change', async () => {
   if (!name) return;
   const preset = (await window.slopinator.presetsList()).find((p) => p.name === name);
   if (!preset) return;
-  Object.assign(params, preset.params);
-  renderRack();
-  renderDetail();
+  applyPresetParams(preset.params);
 });
 
 presetSaveBtn.addEventListener('click', async () => {

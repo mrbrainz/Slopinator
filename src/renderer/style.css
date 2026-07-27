@@ -400,7 +400,6 @@ select{width:100%;}
   border-radius:8px;
   padding:3px;
 }
-.bypass-toggle{max-width:140px;}
 .ab-toggle button{
   flex:1;
   background:none;
@@ -414,6 +413,24 @@ select{width:100%;}
   cursor:pointer;
 }
 .ab-toggle button.on{background:var(--amber);color:#20140a;}
+
+.bypass-toggle{
+  max-width:180px;
+  padding:4px;
+  border-radius:10px;
+  gap:4px;
+}
+.bypass-toggle button{
+  padding:9px 0;
+  border-radius:7px;
+  font-size:12px;
+  letter-spacing:.03em;
+  transition:background-color .15s, color .15s, box-shadow .15s;
+}
+.bypass-toggle button.on{
+  box-shadow:0 0 0 1px var(--amber), 0 2px 8px rgba(255,165,61,.35);
+}
+.bypass-toggle button:not(.on):hover{color:var(--text);}
 
 .preset-row{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;}
 .chip{

@@ -135,6 +135,37 @@ function sweepPreviews(userDataDir) {
 // Named chain presets: a snapshot of Chain view's params object under a
 // user-chosen name, stored in presets.json beside library.json. Saving
 // under an existing name overwrites it.
+//
+// Shipped out of the box with one preset per common playback target, so a
+// fresh install has real starting points rather than an empty dropdown.
+// Chain view defaults to "Club" on every launch (not the last selection).
+const DEFAULT_PRESETS = [
+  {
+    name: 'Streaming',
+    // Platform loudness-normalizes (Spotify/Apple Music/YouTube ~-14 LUFS),
+    // so headroom matters more than raw loudness — gentle drive, -1dBTP
+    // ceiling to survive lossy transcodes without inter-sample clipping.
+    params: { eq: true, monoBass: true, crossover: 120, saturation: true, saturationAmount: 0.03, target: -14, ceiling: -1.0 },
+    savedAt: null,
+  },
+  {
+    name: 'Soundcloud',
+    // SoundCloud applies little to no normalization, so tracks need to be
+    // louder to compete, with a bit more drive for presence over laptop
+    // speakers/earbuds while keeping a safe -1dBTP ceiling for its transcode.
+    params: { eq: true, monoBass: true, crossover: 100, saturation: true, saturationAmount: 0.05, target: -11, ceiling: -1.0 },
+    savedAt: null,
+  },
+  {
+    name: 'Club',
+    // Played on a system, not normalized or lossy-transcoded — pushed
+    // loudest and hottest, tighter mono-bass crossover and more drive for
+    // punch through a PA, narrower ceiling since there's no codec headroom
+    // to protect.
+    params: { eq: true, monoBass: true, crossover: 80, saturation: true, saturationAmount: 0.08, target: -8, ceiling: -0.3 },
+    savedAt: null,
+  },
+];
 
 function presetsFilePath(userDataDir) {
   return path.join(userDataDir, 'presets.json');
@@ -142,7 +173,10 @@ function presetsFilePath(userDataDir) {
 
 function loadPresets(userDataDir) {
   const file = presetsFilePath(userDataDir);
-  if (!fs.existsSync(file)) return [];
+  if (!fs.existsSync(file)) {
+    fs.writeFileSync(file, JSON.stringify(DEFAULT_PRESETS, null, 2));
+    return DEFAULT_PRESETS;
+  }
   try {
     return JSON.parse(fs.readFileSync(file, 'utf8'));
   } catch {
