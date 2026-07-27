@@ -156,6 +156,19 @@ All notable changes to this project are documented here. Format is based on
   re-render next time Compare needs it. `library.removeTrack()` also
   deletes a track's preview immediately rather than waiting for the
   sweep (#26)
+- Chain view is now library-only: removed the folder/file drop zone and
+  the input-file picker, since the Library screen is the sole way to get
+  a track into Chain view. Named chain presets (the "Apply preset…"
+  dropdown) moved to between the Play button and the module rack, and
+  ship prepopulated with three defaults tuned per playback target —
+  Streaming (-14 LUFS, gentle drive, -1dBTP), Soundcloud (-11 LUFS,
+  -1dBTP) and Club (-8 LUFS, more drive, -0.3dBTP) — seeded into
+  `presets.json` on first read (`library.loadPresets`) rather than
+  starting empty. "Club" is applied by default on every launch, not the
+  last-used selection. Loudness's quick-target chips are now
+  capitalized ("Streaming"/"Soundcloud"/"Club"), and the Bypass toggle
+  got a wider, more tactile pill styling instead of a cramped inline
+  A/B switch (#27)
 
 ### Changed (size)
 - Distributable shrunk from 311MB .app / 122MB .dmg to 263MB / 105MB:

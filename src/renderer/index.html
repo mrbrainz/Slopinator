@@ -61,7 +61,7 @@
 
   <div class="screen" id="screen-chain">
     <p class="now-mastering" id="chain-track-name">No track selected</p>
-    <p class="now-sub" id="chain-track-sub">Choose a file below, or pick one from your Library.</p>
+    <p class="now-sub" id="chain-track-sub">Pick a track from your Library.</p>
 
     <div class="chain-layout">
       <div class="chain-main">
@@ -70,9 +70,6 @@
           <button class="btn ghost" id="play-btn" disabled>&#9656; Play</button>
         </div>
 
-        <div class="chain" id="module-rack"></div>
-        <div class="mod-detail" id="mod-detail"></div>
-
         <div class="preset-bar">
           <select id="preset-select"><option value="">Apply preset…</option></select>
           <input id="preset-name" type="text" placeholder="Name this chain" />
@@ -80,17 +77,8 @@
           <button class="btn ghost" id="preset-delete-btn" disabled>Delete</button>
         </div>
 
-        <div id="drop-zone" class="drop-zone">
-          Drop a folder here to master every track in it, or a single audio file
-        </div>
-
-        <div class="field">
-          <label>Input file</label>
-          <div class="row">
-            <input id="input-path" type="text" readonly placeholder="No file selected" />
-            <button class="btn ghost" id="pick-input">Choose…</button>
-          </div>
-        </div>
+        <div class="chain" id="module-rack"></div>
+        <div class="mod-detail" id="mod-detail"></div>
 
         <button class="btn" id="master-btn" disabled>Master</button>
 
