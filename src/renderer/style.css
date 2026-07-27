@@ -307,6 +307,7 @@ select{width:100%;}
   gap:2px;
   padding:0 12px;
   overflow:hidden;
+  cursor:pointer;
 }
 .bar{width:3px;background:var(--line);border-radius:2px;flex-shrink:0;}
 .bar.played{background:var(--teal);}

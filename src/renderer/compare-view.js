@@ -69,6 +69,39 @@ async function toggleListen(path, btn, label) {
 listenBeforeBtn.addEventListener('click', () => toggleListen(originalPath, listenBeforeBtn, 'original'));
 listenAfterBtn.addEventListener('click', () => toggleListen(previewPath, listenAfterBtn, 'mastered'));
 
+async function seekTo(path, fraction, btn, label) {
+  if (!path) return;
+  try {
+    if (window.player.getCurrentPath() !== path) {
+      resetListenButtons();
+      // Force reload for the same reason toggleListen does — the preview's
+      // path is reused, so "already loaded" could be stale content.
+      await window.player.load(path, true);
+      window.player.seekToFraction(fraction);
+      await window.player.play();
+    } else {
+      window.player.seekToFraction(fraction);
+      if (!window.player.isPlaying()) await window.player.play();
+    }
+  } catch {
+    btn.textContent = 'Unable to play — file not found';
+    return;
+  }
+  btn.textContent = `❚❚ Pause ${label}`;
+}
+
+function waveformClickFraction(container, clientX) {
+  const rect = container.getBoundingClientRect();
+  return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+}
+
+waveBeforeEl.addEventListener('click', (e) =>
+  seekTo(originalPath, waveformClickFraction(waveBeforeEl, e.clientX), listenBeforeBtn, 'original')
+);
+waveAfterEl.addEventListener('click', (e) =>
+  seekTo(previewPath, waveformClickFraction(waveAfterEl, e.clientX), listenAfterBtn, 'mastered')
+);
+
 window.player.onEnded(() => {
   const current = window.player.getCurrentPath();
   if (current === originalPath || current === previewPath) resetListenButtons();
