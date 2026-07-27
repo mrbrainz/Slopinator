@@ -218,6 +218,11 @@ select{width:100%;}
 .status-dot.done{background:var(--teal);}
 .status-dot.needs{background:var(--amber);}
 .status-dot.raw{background:var(--muted);}
+.status-dot.missing{background:var(--danger);}
+
+.track-row.missing{opacity:.6;}
+.track-row.missing .track-sub{color:var(--danger);}
+.track-row.missing .tag{color:var(--danger);}
 
 .track-name{font-weight:600;font-size:14px;}
 .track-sub{color:var(--muted);font-size:12px;margin-top:2px;}
@@ -291,6 +296,7 @@ select{width:100%;}
   word-break:break-all;
 }
 .now-sub{color:var(--muted);font-size:12px;margin-bottom:18px;word-break:break-all;}
+.now-sub.missing{color:var(--danger);}
 
 .waveform{
   height:70px;

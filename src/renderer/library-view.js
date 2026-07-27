@@ -14,7 +14,10 @@ function formatDuration(sec) {
   return `${m}:${s}`;
 }
 
-function statusMeta(track) {
+function statusMeta(track, missing) {
+  if (missing) {
+    return { dot: 'missing', tag: 'file missing' };
+  }
   if (track.status === 'mastered') {
     return { dot: 'done', tag: `mastered · ${track.previewPreset || 'custom'}` };
   }
@@ -36,12 +39,12 @@ function meterEl(value, unit, warn) {
   return el;
 }
 
-function renderRow(track) {
-  const { dot, tag } = statusMeta(track);
+function renderRow(track, missing) {
+  const { dot, tag } = statusMeta(track, missing);
   const warn = track.status === 'needs_mastering';
 
   const row = document.createElement('div');
-  row.className = 'track-row';
+  row.className = 'track-row' + (missing ? ' missing' : '');
 
   const dotEl = document.createElement('div');
   dotEl.className = `status-dot ${dot}`;
@@ -52,9 +55,9 @@ function renderRow(track) {
   nameEl.textContent = track.name;
   const subEl = document.createElement('div');
   subEl.className = 'track-sub';
-  subEl.textContent = [formatDuration(track.durationSec), new Date(track.addedAt).toLocaleDateString()]
-    .filter(Boolean)
-    .join(' · ');
+  subEl.textContent = missing
+    ? `Not found at ${track.path}`
+    : [formatDuration(track.durationSec), new Date(track.addedAt).toLocaleDateString()].filter(Boolean).join(' · ');
   nameWrap.append(nameEl, subEl);
 
   const tagWrap = document.createElement('div');
@@ -92,13 +95,17 @@ function renderRow(track) {
 
 async function refreshLibrary() {
   const tracks = await window.slopinator.libraryList();
+  const missingFlags = await Promise.all(tracks.map((t) => window.slopinator.classifyPath(t.path).then((kind) => kind === null)));
+
   libraryListEl.innerHTML = '';
-  tracks.forEach((track) => libraryListEl.appendChild(renderRow(track)));
+  tracks.forEach((track, i) => libraryListEl.appendChild(renderRow(track, missingFlags[i])));
 
   const needsCount = tracks.filter((t) => t.status === 'needs_mastering').length;
+  const missingCount = missingFlags.filter(Boolean).length;
   libraryCountEl.textContent =
     `${tracks.length} track${tracks.length === 1 ? '' : 's'}` +
-    (needsCount ? ` · ${needsCount} need${needsCount === 1 ? 's' : ''} mastering` : '');
+    (needsCount ? ` · ${needsCount} need${needsCount === 1 ? 's' : ''} mastering` : '') +
+    (missingCount ? ` · ${missingCount} missing` : '');
 }
 
 async function importPaths(paths) {

@@ -19,6 +19,7 @@ const meterPeakLabelEl = document.getElementById('meter-peak-label');
 let inputPath = null;
 let currentTrackId = null;
 let waveformBars = [];
+let inputMissing = false;
 
 const PRESETS = { streaming: -14, soundcloud: -11, club: -8 };
 
@@ -341,16 +342,30 @@ window.player.onEnded(() => {
 // the two write paths used to cause.
 
 function updateMasterButton() {
-  masterBtn.disabled = !inputPath;
+  masterBtn.disabled = !inputPath || inputMissing;
 }
 
-function selectChainInput(path, trackId = null) {
+async function selectChainInput(path, trackId = null) {
   inputPath = path;
   currentTrackId = trackId;
   chainTrackNameEl.textContent = path.split('/').pop();
-  chainTrackSubEl.textContent = path;
-  loadWaveform(path);
   updateMeters(null, null);
+
+  inputMissing = (await window.slopinator.classifyPath(path)) === null;
+  // A track selected while we were checking may already be stale.
+  if (inputPath !== path) return;
+
+  chainTrackSubEl.classList.toggle('missing', inputMissing);
+  if (inputMissing) {
+    chainTrackSubEl.textContent = `File not found — it may have been moved or deleted: ${path}`;
+    waveformEl.innerHTML = '';
+    waveformBars = [];
+    playBtn.disabled = true;
+    playBtn.textContent = '▶ Play';
+  } else {
+    chainTrackSubEl.textContent = path;
+    loadWaveform(path);
+  }
   updateMasterButton();
 }
 
