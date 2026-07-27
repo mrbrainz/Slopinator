@@ -117,6 +117,16 @@ All notable changes to this project are documented here. Format is based on
   already wired since #10/#26 but never exposed in the UI). Deletes the
   track's library entry and its preview file; the original audio file on
   disk is untouched (#28)
+- Missing-file detection for tracks whose source file was moved/deleted
+  outside the app: `library-view.js`'s `refreshLibrary()` now stats every
+  track's path (via the existing `classify-path` IPC) in parallel on
+  each refresh and renders a red "file missing" status dot/tag plus the
+  path itself in place of duration/date; the library count line adds a
+  "N missing" segment. Chain view does the same check in
+  `selectChainInput()` before loading the waveform — shows "File not
+  found…" in place of the path and disables Play/Master, instead of
+  silently leaving a blank waveform with both buttons still clickable
+  (#29)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global
