@@ -566,7 +566,7 @@ select{width:100%;}
 .export-list{margin-bottom:20px;}
 .export-row{
   display:grid;
-  grid-template-columns:1fr 150px 110px 90px;
+  grid-template-columns:1fr 190px 90px 90px 90px;
   align-items:center;
   gap:16px;
   padding:13px 12px;
@@ -582,6 +582,18 @@ select{width:100%;}
 }
 .progress-track{height:5px;background:var(--panel-alt);border-radius:3px;overflow:hidden;}
 .progress-fill{height:100%;background:var(--teal);width:0%;transition:width .2s;}
+
+.export-preset-select{
+  background:var(--panel-alt);
+  border:1px solid var(--line);
+  color:var(--text);
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;
+  padding:6px 8px;
+  border-radius:6px;
+  width:100%;
+}
+.export-row-btn{padding:8px 0;font-size:11px;white-space:nowrap;}
 
 .preset-bar{
   display:flex;

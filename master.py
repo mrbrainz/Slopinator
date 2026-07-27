@@ -196,6 +196,28 @@ def master_file(in_path, out_path, target_lufs=-14.0, ceiling_db=-1.0,
     print(f"Done. Final: {final_loudness:.1f} LUFS, {true_peak_db:.2f} dBTP\n")
 
 
+def transcode_file(in_path, out_path, bit_depth="PCM_16"):
+    """Re-encode already-mastered audio (e.g. Chain view's preview file) to
+    a different container/bit depth without re-running the mastering
+    chain — used by Export to reuse a preview instead of redoing the full
+    EQ/mono-bass/saturation/loudness/limiter pass on the original source."""
+    print(f"Loading {in_path} ...")
+    data, sr = load_audio(in_path)
+
+    if bit_depth == "PCM_16":
+        dither = (np.random.rand(*data.shape) - np.random.rand(*data.shape)) / (2 ** 16)
+        data = data + dither
+
+    print(f"Writing {out_path} ({bit_depth})...")
+    sf.write(out_path, data, sr, subtype=bit_depth)
+
+    meter = pyln.Meter(sr)
+    final_loudness = meter.integrated_loudness(data)
+    true_peak = np.max(np.abs(data))
+    true_peak_db = 20 * np.log10(true_peak) if true_peak > 0 else -np.inf
+    print(f"Done. Final: {final_loudness:.1f} LUFS, {true_peak_db:.2f} dBTP\n")
+
+
 def analyze_file(path, oversample=4):
     """Measure integrated LUFS, true peak, and basic format info for an
     unprocessed file, without running it through the mastering chain."""
@@ -280,6 +302,9 @@ def main():
     parser.add_argument("--no-saturation", action="store_true")
     parser.add_argument("--saturation", type=float, default=0.05, help="Saturation amount 0-1 (default 0.05)")
     parser.add_argument("--bit-depth", default="PCM_16", choices=["PCM_16", "PCM_24", "FLOAT"])
+    parser.add_argument("--transcode", action="store_true",
+                         help="Skip the mastering chain — just re-encode 'input' (already-mastered "
+                              "audio) to 'output' at --bit-depth")
     parser.add_argument("--analyze", action="store_true",
                          help="Measure LUFS/true-peak/format of 'input' and print JSON, without mastering it")
     parser.add_argument("--peaks", action="store_true",
@@ -294,6 +319,13 @@ def main():
 
     if args.peaks:
         print(json.dumps(extract_peaks(args.input, args.buckets)))
+        return
+
+    if args.transcode:
+        if not args.output:
+            print("Error: specify an output path, e.g. python3 master.py in.flac out.wav --transcode", file=sys.stderr)
+            sys.exit(1)
+        transcode_file(args.input, args.output, bit_depth=args.bit_depth)
         return
 
     target = args.target if args.target is not None else PRESETS.get(args.format, -14.0)

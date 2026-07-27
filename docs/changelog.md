@@ -139,6 +139,24 @@ All notable changes to this project are documented here. Format is based on
   wasn't already the one loaded (Compare) or already-selected input
   (Chain view), then seeks and starts playback if not already playing,
   mirroring the existing Listen-button/Play-button behavior (#31)
+- Export queue rows gained a per-track preset dropdown (Streaming/
+  Soundcloud/Club, sourced from the same `presets.json` Chain view
+  reads/writes) that overrides that track's export target for this
+  export only, without touching what's saved in Chain view
+  (`export-view.js`'s in-memory `exportOverrides` map). Each row also
+  gained its own "Export…" button to export a single track without
+  running the whole queue (#33)
+- `master.py --transcode` re-encodes already-mastered audio to a
+  different container/bit depth without re-running the mastering
+  chain, and Export now uses it: a WAV-16/FLAC-16 export of a track
+  using its dialed-in Chain view params (no preset override) reuses
+  the existing preview file instead of redoing the full EQ/mono-bass/
+  saturation/loudness/limiter pass from the original source — the
+  preview is already that exact render, always at PCM_16. WAV-24
+  exports, and any export using a preset override, still do a full
+  fresh render, since the preview never held 24-bit precision and an
+  override means the preview's audio doesn't match what should ship.
+  New `run-transcode` IPC handler (#33)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global
@@ -239,6 +257,14 @@ All notable changes to this project are documented here. Format is based on
   never touched. Replaced with fixed defaults (`master.py`'s own), and
   the queue row now says "(default)" so it's not mistaken for a real
   per-track choice. Removed the now-unused `window.getChainParams()` (#24)
+- Export's fallback default for never-dialed-in tracks was hardcoded to
+  `-14 LUFS streaming`, left over from before Chain view's default
+  became "Club" (#27) — every un-dialed track in the queue silently
+  exported at the wrong target with no way to change it short of
+  opening it in Chain view first. Now falls back to the actual "Club"
+  preset from `presets.json` (with a hardcoded Club-shaped fallback only
+  if that preset was deleted), and the new per-row preset dropdown lets
+  it be overridden directly from Export either way (#33)
 - `master.py` now line-buffers stdout explicitly
   (`sys.stdout.reconfigure(line_buffering=True)`), since plain `-u` /
   `PYTHONUNBUFFERED` didn't reach a PyInstaller-frozen binary's stdout and
