@@ -127,6 +127,10 @@ All notable changes to this project are documented here. Format is based on
   found…" in place of the path and disables Play/Master, instead of
   silently leaving a blank waveform with both buttons still clickable
   (#29)
+- Redesigned the module rack's Bypass control: a circular power-icon
+  button (amber glow + ring when engaged, plain outline when bypassed)
+  with a "Processing on"/"Bypassed" status label beside it, replacing
+  the cramped inline On/Off pill switch (#30)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global
