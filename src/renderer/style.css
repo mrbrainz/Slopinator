@@ -195,7 +195,7 @@ select{width:100%;}
 
 .track-row{
   display:grid;
-  grid-template-columns:28px 1fr 90px 130px 90px;
+  grid-template-columns:28px 1fr 90px 130px 90px 32px;
   align-items:center;
   gap:16px;
   padding:12px 10px;
@@ -229,6 +229,20 @@ select{width:100%;}
 }
 .mini-meter.warn{color:var(--amber);}
 .mini-meter.empty{color:var(--muted);}
+
+.row-remove-btn{
+  width:26px;height:26px;
+  border-radius:7px;
+  border:1px solid transparent;
+  background:none;
+  color:var(--muted);
+  font-family:'Space Grotesk',sans-serif;
+  font-size:15px;
+  line-height:1;
+  cursor:pointer;
+  transition:background-color .15s, color .15s, border-color .15s;
+}
+.row-remove-btn:hover{background:rgba(255,91,84,.12);border-color:var(--danger);color:var(--danger);}
 
 .tag{
   font-family:'JetBrains Mono',monospace;

@@ -112,6 +112,11 @@ All notable changes to this project are documented here. Format is based on
   variables), and `src/renderer/settings.js` swaps static labels, shows a
   marquee + blinking badge, and rains confetti. Same DOM, so every screen
   works identically in both modes. Persisted in `localStorage` (#21)
+- Library rows gained a remove ("✕") button — confirms first, then calls
+  the existing `library-remove` IPC handler (`library.removeTrack()`,
+  already wired since #10/#26 but never exposed in the UI). Deletes the
+  track's library entry and its preview file; the original audio file on
+  disk is untouched (#28)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global
