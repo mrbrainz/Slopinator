@@ -74,38 +74,39 @@ function sliderRow(labelText, value, min, max, step, formatFn, onChange) {
 
 function bypassToggleRow(value, onChange) {
   const row = document.createElement('div');
-  row.className = 'slider-row';
+  row.className = 'bypass-row';
 
   const label = document.createElement('label');
+  label.className = 'bypass-label';
   label.textContent = 'BYPASS';
 
-  const toggle = document.createElement('div');
-  toggle.className = 'ab-toggle bypass-toggle';
+  const control = document.createElement('div');
+  control.className = 'bypass-control';
 
-  const onBtn = document.createElement('button');
-  onBtn.textContent = 'On';
-  const offBtn = document.createElement('button');
-  offBtn.textContent = 'Off';
+  const powerBtn = document.createElement('button');
+  powerBtn.className = 'bypass-power-btn';
+  powerBtn.setAttribute('aria-label', 'Toggle bypass');
+  powerBtn.innerHTML =
+    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v8"/><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/></svg>';
+
+  const statusText = document.createElement('span');
+  statusText.className = 'bypass-status-text';
 
   const sync = () => {
-    onBtn.classList.toggle('on', value);
-    offBtn.classList.toggle('on', !value);
+    powerBtn.classList.toggle('on', value);
+    statusText.classList.toggle('on', value);
+    statusText.textContent = value ? 'Processing on' : 'Bypassed';
   };
   sync();
 
-  onBtn.addEventListener('click', () => {
-    value = true;
+  powerBtn.addEventListener('click', () => {
+    value = !value;
     sync();
-    onChange(true);
-  });
-  offBtn.addEventListener('click', () => {
-    value = false;
-    sync();
-    onChange(false);
+    onChange(value);
   });
 
-  toggle.append(onBtn, offBtn);
-  row.append(label, toggle);
+  control.append(powerBtn, statusText);
+  row.append(label, control);
   return row;
 }
 
