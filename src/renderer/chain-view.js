@@ -334,6 +334,25 @@ window.player.onEnded(() => {
   playBtn.textContent = '▶ Play';
 });
 
+waveformEl.addEventListener('click', async (e) => {
+  if (!inputPath || inputMissing || !waveformBars.length) return;
+  const rect = waveformEl.getBoundingClientRect();
+  const fraction = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+
+  if (window.player.getCurrentPath() !== inputPath) {
+    try {
+      await window.player.load(inputPath);
+    } catch {
+      return;
+    }
+    playBtn.disabled = false;
+  }
+
+  window.player.seekToFraction(fraction);
+  const playedCount = Math.floor(fraction * waveformBars.length);
+  waveformBars.forEach((bar, i) => bar.classList.toggle('played', i < playedCount));
+});
+
 // --- input selection ---
 // No output-path picker here — Master renders to an app-managed preview
 // slot (one file per track, see window.slopinator.getPreviewPath) rather

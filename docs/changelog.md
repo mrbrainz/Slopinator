@@ -131,6 +131,14 @@ All notable changes to this project are documented here. Format is based on
   button (amber glow + ring when engaged, plain outline when bypassed)
   with a "Processing on"/"Bypassed" status label beside it, replacing
   the cramped inline On/Off pill switch (#30)
+- Click-to-seek on every waveform: clicking anywhere in Chain view's
+  waveform, or either of Compare's before/after waveforms, jumps
+  playback to that point (`window.player.seekToFraction()`, already
+  existed for a planned feature but was unused until now). Clicking
+  loads the corresponding track into the shared player first if it
+  wasn't already the one loaded (Compare) or already-selected input
+  (Chain view), then seeks and starts playback if not already playing,
+  mirroring the existing Listen-button/Play-button behavior (#31)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global
