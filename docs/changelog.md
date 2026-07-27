@@ -156,6 +156,14 @@ All notable changes to this project are documented here. Format is based on
   (#23)
 
 ### Fixed
+- Exporting a track from the Export screen genuinely mastered it but
+  never told the Library — `status` stayed `needs_mastering` forever,
+  and Compare kept insisting the track "hasn't been mastered yet" even
+  though a real mastered file now existed on disk. Each successful
+  export now `libraryUpdate`s the track (status/masteredPath/
+  masteredLufs/masteredTruePeakDb/masteredParams/masteredPreset/
+  masteredAt), the same shape Chain view's Master button already writes
+  (#25)
 - Library screen never re-rendered on tab revisit (only Compare/Export
   listened for `screen-activated`) — mastering a track in Chain view left
   its Library row showing the stale pre-mastering status/tag until the

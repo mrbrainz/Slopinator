@@ -7,7 +7,11 @@
 // track). The queue row says "(default)" for that case so it's not
 // mistaken for a real per-track choice. Progress is stepped
 // (queued / rendering / done) — master.py reports nothing mid-file, so
-// there's no honest percentage to show (docs/todos.md).
+// there's no honest percentage to show (docs/todos.md). On success each
+// track is libraryUpdate()d to status 'mastered' with its real output
+// path/stats/params, the same as Chain view's Master button does — so
+// Library and Compare correctly reflect a track exported here, not just
+// one mastered in Chain view.
 
 const exportCountEl = document.getElementById('export-count');
 const exportEmptyEl = document.getElementById('export-empty');
@@ -43,9 +47,13 @@ function trackExportParams(track) {
   return track.masteredParams || DEFAULT_EXPORT_PARAMS;
 }
 
+function presetNameForTarget(target) {
+  return EXPORT_PRESETS[String(target)] || null;
+}
+
 function targetLabel(track) {
   const params = trackExportParams(track);
-  const preset = EXPORT_PRESETS[String(params.target)];
+  const preset = presetNameForTarget(params.target);
   const label = `${params.target} LUFS${preset ? ` ${preset}` : ''}`;
   return track.masteredParams ? label : `${label} (default)`;
 }
@@ -133,14 +141,28 @@ async function runExport(folder) {
     const track = exportQueue[i];
     setRowState(rows[i], 'rendering');
 
-    const result = await window.slopinator.runMaster({
-      inputPath: track.path,
-      outputPath: exportOutputPath(folder, track, ext),
-      params: { ...trackExportParams(track), bitDepth },
-    });
+    const outputPath = exportOutputPath(folder, track, ext);
+    const params = { ...trackExportParams(track), bitDepth };
+    const result = await window.slopinator.runMaster({ inputPath: track.path, outputPath, params });
 
     setRowState(rows[i], result.success ? 'done' : 'failed');
-    if (!result.success) failures++;
+    if (result.success) {
+      // Without this, a track exported here (rather than mastered via
+      // Chain view's Master button) never gets marked mastered — Library
+      // and Compare would keep saying it still needs mastering, forever,
+      // even though a real mastered file now exists on disk.
+      await window.slopinator.libraryUpdate(track.id, {
+        status: 'mastered',
+        masteredPreset: presetNameForTarget(params.target),
+        masteredAt: new Date().toISOString(),
+        masteredPath: outputPath,
+        masteredLufs: result.finalLufs,
+        masteredTruePeakDb: result.finalTruePeakDb,
+        masteredParams: params,
+      });
+    } else {
+      failures++;
+    }
   }
 
   exportCountEl.textContent = failures
