@@ -250,6 +250,16 @@ All notable changes to this project are documented here. Format is based on
   afterward. Replaced with `scripts/afterSign.js`, wired through
   electron-builder's own `build.afterSign` hook so signing happens before
   the `.dmg` is built (#8)
+- `.bar`'s CSS (`width:3px; flex-shrink:0`) meant a waveform's bars
+  packed to the left of their container instead of filling it, so
+  clicking near the right edge (#31) would seek correctly by fraction
+  but land on a point well past where the visible bars actually ended.
+  Bars now use `flex:1 1 0` so they always span the full container width,
+  matching the click math exactly (#32)
+- Compare's before/after waveforms never highlighted played bars during
+  playback — only Chain view's did. Both now track `window.player`'s
+  `onTimeUpdate` against `originalPath`/`previewPath` the same way Chain
+  view does against its own `inputPath` (#32)
 
 ## [0.1.0] - 2026-07-25
 

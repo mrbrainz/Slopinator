@@ -309,7 +309,7 @@ select{width:100%;}
   overflow:hidden;
   cursor:pointer;
 }
-.bar{width:3px;background:var(--line);border-radius:2px;flex-shrink:0;}
+.bar{flex:1 1 0;min-width:1px;background:var(--line);border-radius:1px;}
 .bar.played{background:var(--teal);}
 
 .chain-transport{margin:10px 0 20px;}
