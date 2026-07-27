@@ -1,17 +1,20 @@
-// Export screen: batch-export every analyzed library track to a chosen
-// folder. Each track re-runs master.py with the exact params it was
-// mastered with in Chain view (masteredParams); tracks never mastered
-// there fall back to fixed defaults (master.py's own defaults, not
-// whatever happens to be currently sitting in Chain view's rack — that
-// would silently apply one track's leftover settings to an unrelated
-// track). The queue row says "(default)" for that case so it's not
-// mistaken for a real per-track choice. Progress is stepped
-// (queued / rendering / done) — master.py reports nothing mid-file, so
-// there's no honest percentage to show (docs/todos.md). On success each
-// track is libraryUpdate()d to status 'mastered' with its real output
-// path/stats/params, the same as Chain view's Master button does — so
-// Library and Compare correctly reflect a track exported here, not just
-// one mastered in Chain view.
+// Export screen: batch-export tracks that haven't already been exported
+// to a chosen folder. Each track re-runs master.py with the exact params
+// it was dialed in with in Chain view (previewParams — see
+// docs/context.md's "Preview vs export" section); tracks never opened
+// there fall back to fixed defaults, and the queue row says "(default)"
+// so that's not mistaken for a real per-track choice. Progress is
+// stepped (queued / rendering / done) — master.py reports nothing
+// mid-file, so there's no honest percentage to show (docs/todos.md).
+//
+// This is the only place a real, user-chosen destination file ever gets
+// written — Chain view's Master button renders to an app-managed preview
+// slot instead. Export never touches the preview fields; it only records
+// exportedPath/exportedAt, which is also what keeps the queue from
+// re-exporting (and re-naming, and duplicating) something already
+// written out: a track is only queued if it's never been exported, or
+// has been re-mastered in Chain view since its last export
+// (previewedAt > exportedAt).
 
 const exportCountEl = document.getElementById('export-count');
 const exportEmptyEl = document.getElementById('export-empty');
@@ -44,7 +47,7 @@ let exportQueue = [];
 let isExporting = false;
 
 function trackExportParams(track) {
-  return track.masteredParams || DEFAULT_EXPORT_PARAMS;
+  return track.previewParams || DEFAULT_EXPORT_PARAMS;
 }
 
 function presetNameForTarget(target) {
@@ -55,7 +58,15 @@ function targetLabel(track) {
   const params = trackExportParams(track);
   const preset = presetNameForTarget(params.target);
   const label = `${params.target} LUFS${preset ? ` ${preset}` : ''}`;
-  return track.masteredParams ? label : `${label} (default)`;
+  return track.previewParams ? label : `${label} (default)`;
+}
+
+// Needs exporting if it's analyzed/mastered AND (never exported, or
+// dialed in again in Chain view since the last export).
+function needsExport(track) {
+  if (track.status !== 'needs_mastering' && track.status !== 'mastered') return false;
+  if (!track.exportedAt) return true;
+  return Boolean(track.previewedAt && track.previewedAt > track.exportedAt);
 }
 
 function setRowState(row, state) {
@@ -113,9 +124,16 @@ async function refreshExport() {
   if (isExporting) return; // don't rebuild rows out from under a running export
 
   const tracks = await window.slopinator.libraryList();
-  exportQueue = tracks.filter((t) => t.status === 'needs_mastering' || t.status === 'mastered');
+  exportQueue = tracks.filter(needsExport);
+  const alreadyExportedCount = tracks.filter(
+    (t) => (t.status === 'needs_mastering' || t.status === 'mastered') && !needsExport(t)
+  ).length;
 
-  exportCountEl.textContent = `${exportQueue.length} track${exportQueue.length === 1 ? '' : 's'} queued`;
+  const countText = `${exportQueue.length} track${exportQueue.length === 1 ? '' : 's'} queued`;
+  exportCountEl.textContent = alreadyExportedCount
+    ? `${countText} · ${alreadyExportedCount} already exported (re-master in Chain view to include again)`
+    : countText;
+
   const hasTracks = exportQueue.length > 0;
   exportEmptyEl.style.display = hasTracks ? 'none' : '';
   exportContentEl.style.display = hasTracks ? '' : 'none';
@@ -147,18 +165,17 @@ async function runExport(folder) {
 
     setRowState(rows[i], result.success ? 'done' : 'failed');
     if (result.success) {
-      // Without this, a track exported here (rather than mastered via
-      // Chain view's Master button) never gets marked mastered — Library
-      // and Compare would keep saying it still needs mastering, forever,
-      // even though a real mastered file now exists on disk.
+      // Deliberately not touching previewPath/previewParams/previewedAt
+      // here — those are Chain view's own slot, and this track may never
+      // have been opened there (using DEFAULT_EXPORT_PARAMS instead).
+      // exportedAt is what the needsExport() filter checks, so without
+      // this a track exported here would just get exported again, under
+      // the same name, every single time this button is clicked.
       await window.slopinator.libraryUpdate(track.id, {
         status: 'mastered',
-        masteredPreset: presetNameForTarget(params.target),
-        masteredAt: new Date().toISOString(),
-        masteredPath: outputPath,
-        masteredLufs: result.finalLufs,
-        masteredTruePeakDb: result.finalTruePeakDb,
-        masteredParams: params,
+        previewPreset: presetNameForTarget(params.target),
+        exportedPath: outputPath,
+        exportedAt: new Date().toISOString(),
       });
     } else {
       failures++;

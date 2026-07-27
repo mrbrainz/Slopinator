@@ -3,7 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('slopinator', {
   version: process.env.npm_package_version,
   pickInputFile: () => ipcRenderer.invoke('pick-input-file'),
-  pickOutputPath: (defaultName) => ipcRenderer.invoke('pick-output-path', defaultName),
+  getPreviewPath: (trackId) => ipcRenderer.invoke('get-preview-path', trackId),
   runMaster: (args) => ipcRenderer.invoke('run-master', args),
   runMasterBatch: (args) => ipcRenderer.invoke('run-master-batch', args),
   classifyPath: (path) => ipcRenderer.invoke('classify-path', path),

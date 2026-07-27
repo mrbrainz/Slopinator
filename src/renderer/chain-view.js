@@ -6,7 +6,6 @@
 const chainTrackNameEl = document.getElementById('chain-track-name');
 const chainTrackSubEl = document.getElementById('chain-track-sub');
 const inputPathEl = document.getElementById('input-path');
-const outputPathEl = document.getElementById('output-path');
 const masterBtn = document.getElementById('master-btn');
 const statusEl = document.getElementById('status');
 const logEl = document.getElementById('log');
@@ -19,7 +18,6 @@ const meterLadderEl = document.getElementById('meter-ladder');
 const meterPeakLabelEl = document.getElementById('meter-peak-label');
 
 let inputPath = null;
-let outputPath = null;
 let currentTrackId = null;
 let waveformBars = [];
 
@@ -335,16 +333,16 @@ window.player.onEnded(() => {
   playBtn.textContent = '▶ Play';
 });
 
-// --- input/output selection ---
+// --- input selection ---
+// No output-path picker here — Master renders to an app-managed preview
+// slot (one file per track, see window.slopinator.getPreviewPath) rather
+// than asking where to save. Writing to a real, user-chosen destination
+// is Export's job alone now — see docs/context.md's "Preview vs export"
+// section for why splitting these two removed the duplicate-file problem
+// the two write paths used to cause.
 
 function updateMasterButton() {
-  masterBtn.disabled = !(inputPath && outputPath);
-}
-
-function defaultOutputName(path) {
-  const base = path.split('/').pop();
-  const dot = base.lastIndexOf('.');
-  return dot === -1 ? `${base}-mastered` : `${base.slice(0, dot)}-mastered${base.slice(dot)}`;
+  masterBtn.disabled = !inputPath;
 }
 
 function selectChainInput(path, trackId = null) {
@@ -371,15 +369,6 @@ document.getElementById('pick-input').addEventListener('click', async () => {
   selectChainInput(picked);
 });
 
-document.getElementById('pick-output').addEventListener('click', async () => {
-  const defaultName = inputPath ? defaultOutputName(inputPath) : 'mastered.wav';
-  const picked = await window.slopinator.pickOutputPath(defaultName);
-  if (!picked) return;
-  outputPath = picked;
-  outputPathEl.value = outputPath;
-  updateMasterButton();
-});
-
 // --- mastering ---
 
 async function runWithLogging(runFn, onDone) {
@@ -397,18 +386,18 @@ async function runWithLogging(runFn, onDone) {
   updateMasterButton();
 }
 
-masterBtn.addEventListener('click', () => {
+masterBtn.addEventListener('click', async () => {
   statusEl.textContent = 'Mastering…';
   const trackIdAtRunStart = currentTrackId;
-  const outputPathAtRunStart = outputPath;
   const presetAtRunStart = currentPresetName();
   const paramsAtRunStart = { ...params };
+  const previewPath = await window.slopinator.getPreviewPath(trackIdAtRunStart);
 
   runWithLogging(
-    () => window.slopinator.runMaster({ inputPath, outputPath, params }),
+    () => window.slopinator.runMaster({ inputPath, outputPath: previewPath, params }),
     async (result) => {
       statusEl.textContent = result.success
-        ? `Done: ${outputPath}`
+        ? 'Done — preview ready. Check it against the original in Compare.'
         : `Failed (exit ${result.code}): ${result.stderr.trim() || 'unknown error'}`;
 
       if (result.success) {
@@ -418,12 +407,12 @@ masterBtn.addEventListener('click', () => {
       if (result.success && trackIdAtRunStart) {
         await window.slopinator.libraryUpdate(trackIdAtRunStart, {
           status: 'mastered',
-          masteredPreset: presetAtRunStart,
-          masteredAt: new Date().toISOString(),
-          masteredPath: outputPathAtRunStart,
-          masteredLufs: result.finalLufs,
-          masteredTruePeakDb: result.finalTruePeakDb,
-          masteredParams: paramsAtRunStart,
+          previewPreset: presetAtRunStart,
+          previewedAt: new Date().toISOString(),
+          previewPath,
+          previewLufs: result.finalLufs,
+          previewTruePeakDb: result.finalTruePeakDb,
+          previewParams: paramsAtRunStart,
         });
       }
     }
@@ -469,7 +458,7 @@ dropZone.addEventListener('drop', async (e) => {
 
 // --- named chain presets ---
 // The mockup put "Save presets used" on the Export screen, but the rack
-// params live here — Export already re-uses each track's masteredParams,
+// params live here — Export already re-uses each track's previewParams,
 // so saving/applying named chains belongs where the chain is edited.
 
 const presetSelectEl = document.getElementById('preset-select');
