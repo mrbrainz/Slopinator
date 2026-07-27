@@ -144,7 +144,63 @@ bytes went and what was done:
 - **DMG uses `format: ULFO`** (lzfse) — compresses better than the
   default.
 
-## Token efficiency (priority)
+## Preview vs export (PR #26)
+
+Two deliberately separate things a track can have, easy to conflate if
+you're only skimming the schema:
+
+- **`preview{Path,Lufs,TruePeakDb,Params,Preset,edAt}`** — Chain view's
+  own slot. One file per track at a fixed, app-managed path
+  (`<userData>/previews/<trackId>.flac`, via
+  `library.previewPathForTrack()`), written *only* by Chain view's
+  Master button. This is for dialing in settings and auditioning in
+  Compare — never a final deliverable, and never presented to the user
+  as a save location (Master has no output-path picker at all anymore).
+- **`exported{Path,At}`** — the last real, user-chosen destination
+  Export wrote a file to. Export reads `previewParams` (falling back to
+  fixed defaults for a track never opened in Chain view) but never
+  writes the preview fields back — exporting doesn't change what's
+  dialed in, it just records that version as committed to a real file.
+
+This split exists because the two used to be the same field
+(`masteredPath` etc.), each written by a different screen with its own
+naming convention and its own idea of where to save — which meant
+mastering a track in Chain view and then batch-exporting from Export
+produced two different files under two different names for the same
+track, silently, every time. Export's queue now only shows a track if
+`!exportedAt || previewedAt > exportedAt` (never exported, or re-dialed
+since the last export) — that's what makes running Export twice not
+duplicate every file. If you're adding a third place that writes a real
+output file, give it the same `exportedAt`-style bookkeeping rather than
+inventing a fourth path field.
+
+**Previews are never authoritative — always regenerable** from
+`previewParams` (mastering one track takes about a second), which is
+what makes it safe to garbage-collect them aggressively:
+- `library.removeTrack()` deletes a track's preview file immediately.
+- `library.sweepPreviews()` runs once on every launch (`app.whenReady()`
+  in `main.js`) and deletes any preview file whose track no longer
+  exists (orphan) or that's older than 30 days regardless (stale) — it
+  doesn't need to be conservative, because the worst case is just a
+  re-render next time it's needed.
+- Compare (`compare-view.js`'s `regeneratePreviewIfMissing`) checks the
+  file actually exists on disk before using it, and silently re-renders
+  if not, rather than erroring. A track can also be `status: 'mastered'`
+  with `previewPath: null` — exported straight from Export's defaults,
+  never opened in Chain view — and Compare shows an honest "open it in
+  Chain view" message for that case instead of pretending there's
+  something to A/B.
+- Preview format is FLAC (not WAV) purely for footprint — lossless, no
+  behavior difference, `player.js`/`getPeaks()` already handle it
+  identically to WAV via `soundfile`.
+
+**Gotcha this surfaced**: `window.player`'s shared `<audio>` element
+caches by path (`currentPath === filePath` skips reloading) as a normal
+optimization — but a preview's path is fixed and reused, so after a
+re-master the same path now points at different bytes on disk. `load()`
+takes a `force` param to bypass the cache for exactly this case; any new
+code that plays back a preview/export path (not a stable, never-rewritten
+source file) needs to pass it.
 
 - Don't re-read files you've seen; use `Read` with offset/limit and `grep`, not
   whole-file dumps. Never paste large network logs.

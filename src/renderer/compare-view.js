@@ -1,6 +1,10 @@
 // Compare screen: real before/after stats and A/B listen buttons for
-// whatever track is currently loaded in Chain view, once it's been
-// mastered. Refreshes whenever this tab becomes active (see renderer.js's
+// whatever track is currently loaded in Chain view, once it has a real
+// preview (track.previewPath — see docs/context.md's "Preview vs
+// export" section). Previews are regenerable, not authoritative, so a
+// missing one (cleaned up by the startup GC sweep, or just never
+// rendered) gets silently rebuilt from previewParams rather than erroring.
+// Refreshes whenever this tab becomes active (see renderer.js's
 // 'screen-activated' event) rather than tracking its own selection.
 
 const compareTrackNameEl = document.getElementById('compare-track-name');
@@ -19,7 +23,7 @@ const adjustBtn = document.getElementById('compare-adjust-btn');
 const exportBtn = document.getElementById('compare-export-btn');
 
 let originalPath = null;
-let masteredPath = null;
+let previewPath = null;
 
 async function renderCompareWave(container, path) {
   container.innerHTML = '';
@@ -42,7 +46,10 @@ async function toggleListen(path, btn, label) {
   try {
     if (window.player.getCurrentPath() !== path) {
       resetListenButtons();
-      await window.player.load(path);
+      // Force reload: the preview lives at a reused path, so "already
+      // loaded" from a previous visit could actually be stale content
+      // from before a re-master.
+      await window.player.load(path, true);
       await window.player.play();
     } else if (window.player.isPlaying()) {
       window.player.pause();
@@ -60,11 +67,11 @@ async function toggleListen(path, btn, label) {
 }
 
 listenBeforeBtn.addEventListener('click', () => toggleListen(originalPath, listenBeforeBtn, 'original'));
-listenAfterBtn.addEventListener('click', () => toggleListen(masteredPath, listenAfterBtn, 'mastered'));
+listenAfterBtn.addEventListener('click', () => toggleListen(previewPath, listenAfterBtn, 'mastered'));
 
 window.player.onEnded(() => {
   const current = window.player.getCurrentPath();
-  if (current === originalPath || current === masteredPath) resetListenButtons();
+  if (current === originalPath || current === previewPath) resetListenButtons();
 });
 
 adjustBtn.addEventListener('click', () => activateTab('chain'));
@@ -77,6 +84,30 @@ function showEmpty(message) {
   compareTrackNameEl.textContent = 'Compare';
 }
 
+// Compare needs a real preview file to A/B against — a track can be
+// status 'mastered' with no previewPath at all (exported straight from
+// the Export screen's defaults, never opened in Chain view). That's a
+// legitimate state, just not one Compare can do anything with, so it
+// gets its own honest message rather than pretending there's a preview.
+async function regeneratePreviewIfMissing(track) {
+  const exists = (await window.slopinator.classifyPath(track.previewPath)) === 'file';
+  if (exists) return track;
+
+  const result = await window.slopinator.runMaster({
+    inputPath: track.path,
+    outputPath: track.previewPath,
+    params: track.previewParams,
+  });
+  if (!result.success) return track;
+
+  const tracks = await window.slopinator.libraryUpdate(track.id, {
+    previewLufs: result.finalLufs,
+    previewTruePeakDb: result.finalTruePeakDb,
+    previewedAt: new Date().toISOString(),
+  });
+  return tracks.find((t) => t.id === track.id) || track;
+}
+
 async function refreshCompare() {
   const current = window.getCurrentChainTrack ? window.getCurrentChainTrack() : {};
   if (!current.trackId || !current.path) {
@@ -85,30 +116,36 @@ async function refreshCompare() {
   }
 
   const tracks = await window.slopinator.libraryList();
-  const track = tracks.find((t) => t.id === current.trackId);
-  if (!track || track.status !== 'mastered' || !track.masteredPath) {
+  let track = tracks.find((t) => t.id === current.trackId);
+  if (!track || !track.previewPath) {
     const name = track ? track.name : current.path.split('/').pop();
-    showEmpty(`"${name}" hasn't been mastered yet — do that in Chain view first.`);
+    const message =
+      track && track.status === 'mastered'
+        ? `"${name}" was exported directly without a Chain view preview — open it there to compare before/after.`
+        : `"${name}" hasn't been mastered yet — do that in Chain view first.`;
+    showEmpty(message);
     return;
   }
+
+  track = await regeneratePreviewIfMissing(track);
 
   compareEmptyEl.style.display = 'none';
   compareContentEl.style.display = '';
   compareTrackNameEl.textContent = `${track.name} — before / after`;
 
   originalPath = track.path;
-  masteredPath = track.masteredPath;
+  previewPath = track.previewPath;
   resetListenButtons();
 
   beforeLufsEl.textContent = track.lufs != null ? `${track.lufs.toFixed(1)} LUFS` : '—';
   beforePeakEl.textContent = track.truePeakDb != null ? `${track.truePeakDb.toFixed(2)} dBTP` : '—';
-  afterLufsEl.textContent = track.masteredLufs != null ? `${track.masteredLufs.toFixed(1)} LUFS` : '—';
-  afterPeakEl.textContent = track.masteredTruePeakDb != null ? `${track.masteredTruePeakDb.toFixed(2)} dBTP` : '—';
+  afterLufsEl.textContent = track.previewLufs != null ? `${track.previewLufs.toFixed(1)} LUFS` : '—';
+  afterPeakEl.textContent = track.previewTruePeakDb != null ? `${track.previewTruePeakDb.toFixed(2)} dBTP` : '—';
 
-  const monoBassUsed = track.masteredParams && track.masteredParams.monoBass;
-  afterBassEl.textContent = monoBassUsed ? `mono below ${track.masteredParams.crossover}Hz` : 'unlinked';
+  const monoBassUsed = track.previewParams && track.previewParams.monoBass;
+  afterBassEl.textContent = monoBassUsed ? `mono below ${track.previewParams.crossover}Hz` : 'unlinked';
 
-  await Promise.all([renderCompareWave(waveBeforeEl, track.path), renderCompareWave(waveAfterEl, track.masteredPath)]);
+  await Promise.all([renderCompareWave(waveBeforeEl, track.path), renderCompareWave(waveAfterEl, track.previewPath)]);
 }
 
 document.addEventListener('screen-activated', (e) => {

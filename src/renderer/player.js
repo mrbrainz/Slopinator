@@ -11,9 +11,14 @@ function toFileUrl(filePath) {
   return 'file://' + filePath.split('/').map(encodeURIComponent).join('/');
 }
 
-function load(filePath) {
+function load(filePath, force = false) {
   return new Promise((resolve, reject) => {
-    if (currentPath === filePath && audioEl.readyState >= 1) {
+    // Preview/export files live at a fixed, reused path per track — the
+    // same URL can point at genuinely different bytes after a re-master,
+    // so callers that know the content may have changed since the last
+    // load (Chain view after mastering, Compare before A/B) pass
+    // force=true to skip this dedup and always reload from disk.
+    if (!force && currentPath === filePath && audioEl.readyState >= 1) {
       resolve(audioEl.duration);
       return;
     }

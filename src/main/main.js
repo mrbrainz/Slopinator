@@ -47,14 +47,6 @@ ipcMain.handle('pick-input-file', async () => {
   return result.canceled ? null : result.filePaths[0];
 });
 
-ipcMain.handle('pick-output-path', async (_event, defaultName) => {
-  const result = await dialog.showSaveDialog({
-    defaultPath: defaultName,
-    filters: [{ name: 'Audio', extensions: ['wav', 'aiff', 'flac'] }],
-  });
-  return result.canceled ? null : result.filePath;
-});
-
 function runMasterPy(scriptArgs, sender) {
   const sendLog = (stream, text) => {
     if (!sender.isDestroyed()) {
@@ -186,6 +178,11 @@ function runMasterJson(scriptArgs) {
 
 const userDataDir = () => app.getPath('userData');
 
+// Files opened via "Choose…" rather than a Library row have no track id
+// to key a preview slot on — they share one fixed ad-hoc slot instead
+// (still just one file, still swept like any other on the next launch).
+ipcMain.handle('get-preview-path', (_event, trackId) => library.previewPathForTrack(userDataDir(), trackId || '_adhoc'));
+
 ipcMain.handle('library-list', () => library.loadLibrary(userDataDir()));
 ipcMain.handle('library-add', (_event, filePath) => library.addTrack(userDataDir(), filePath));
 ipcMain.handle('library-update', (_event, { id, patch }) => library.updateTrack(userDataDir(), id, patch));
@@ -283,7 +280,11 @@ ipcMain.handle('library-import', async (_event, paths) => {
   return tracks;
 });
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  const removed = library.sweepPreviews(userDataDir());
+  if (removed) console.log(`sweepPreviews: removed ${removed} orphaned/stale preview file(s)`);
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();

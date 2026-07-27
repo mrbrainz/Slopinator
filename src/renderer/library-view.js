@@ -16,7 +16,7 @@ function formatDuration(sec) {
 
 function statusMeta(track) {
   if (track.status === 'mastered') {
-    return { dot: 'done', tag: `mastered · ${track.masteredPreset || 'custom'}` };
+    return { dot: 'done', tag: `mastered · ${track.previewPreset || 'custom'}` };
   }
   if (track.status === 'needs_mastering') {
     return { dot: 'needs', tag: 'needs mastering' };

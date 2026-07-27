@@ -131,6 +131,31 @@ All notable changes to this project are documented here. Format is based on
   screen (Chain view, Compare) shares the same underlying `<audio>`
   element, so each can tell whether the currently loaded/playing file is
   actually its own before reacting to `onTimeUpdate`/`onEnded` (#18)
+- Chain view's Master button no longer has an output-path picker —
+  it renders to an app-managed preview slot instead
+  (`<userData>/previews/<trackId>.flac`, one file per track, FLAC).
+  Writing to a real, user-chosen destination is Export's job alone now.
+  This is what removed the duplicate-file bug where mastering a track in
+  Chain view and then batch-exporting from Export produced two different
+  files under two different naming conventions for the same track — see
+  "Preview vs export" in `docs/context.md`. Library track schema split
+  the old `mastered*` fields into `preview{Path,Lufs,TruePeakDb,Params,
+  Preset,edAt}` (Chain view's slot) and `exported{Path,At}` (Export's
+  last real destination); Export's queue now only shows a track if it's
+  never been exported or has been re-dialed in Chain view since
+  (`previewedAt > exportedAt`), instead of unconditionally reprocessing
+  everything on every run. `window.player.load()` gained a `force` param
+  to bypass its same-path caching, needed because a preview's path is
+  fixed and reused, so it can point at different bytes after a
+  re-master (#26)
+- New `library.previewPathForTrack()`/`sweepPreviews()`: previews are
+  never authoritative (always regenerable from `previewParams`), so a
+  startup sweep (`app.whenReady()` in `main.js`) aggressively deletes
+  orphaned (track no longer exists) and stale (>30 days) preview files
+  without needing to be conservative — the worst case is a one-second
+  re-render next time Compare needs it. `library.removeTrack()` also
+  deletes a track's preview immediately rather than waiting for the
+  sweep (#26)
 
 ### Changed (size)
 - Distributable shrunk from 311MB .app / 122MB .dmg to 263MB / 105MB:

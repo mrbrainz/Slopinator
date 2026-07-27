@@ -3,12 +3,25 @@ const path = require('path');
 const crypto = require('crypto');
 
 // Track lifecycle: 'raw' (imported, not yet analyzed) -> 'needs_mastering'
-// (analyzed, has lufs/truePeakDb) -> 'mastered' (run through master.py, has
-// masteredPreset/masteredAt/masteredPath/masteredLufs/masteredTruePeakDb/
-// masteredParams — the output path, its own measured stats, and the exact
-// rack params used, for the Compare screen). Callers (library screen,
-// analyze step, master-run step) are responsible for setting status via
-// updateTrack — this module just persists whatever it's given.
+// (analyzed, has lufs/truePeakDb) -> 'mastered' (has a dialed-in
+// preview and/or has been exported — see below). Callers (library
+// screen, analyze step, master-run step) set status via updateTrack —
+// this module just persists whatever it's given.
+//
+// Two independent, deliberately separate things a track can have:
+//   - preview{Path,Lufs,TruePeakDb,Params,Preset,edAt} — Chain view's
+//     own slot (one file per track, app-managed, in previewsDir() — see
+//     sweepPreviews below), written only by Chain view's Master button.
+//     This is for auditioning/comparing, never a final deliverable.
+//   - exported{Path,At} — the last real, user-chosen destination Export
+//     wrote a file to. Export reads previewParams (falling back to
+//     defaults) but never writes the preview fields — exporting doesn't
+//     change what's "dialed in", it just records that *that* dialed-in
+//     version has now been committed to a real file. Export's queue
+//     uses this to skip tracks that are already exported and haven't
+//     been re-mastered since (previewedAt > exportedAt), so running it
+//     twice doesn't silently duplicate every file under two different
+//     names.
 
 function libraryFilePath(userDataDir) {
   return path.join(userDataDir, 'library.json');
@@ -45,12 +58,14 @@ function addTrack(userDataDir, filePath) {
     bitDepth: null,
     lufs: null,
     truePeakDb: null,
-    masteredPreset: null,
-    masteredAt: null,
-    masteredPath: null,
-    masteredLufs: null,
-    masteredTruePeakDb: null,
-    masteredParams: null,
+    previewPreset: null,
+    previewedAt: null,
+    previewPath: null,
+    previewLufs: null,
+    previewTruePeakDb: null,
+    previewParams: null,
+    exportedPath: null,
+    exportedAt: null,
   };
   tracks.push(track);
   saveLibrary(userDataDir, tracks);
@@ -67,9 +82,54 @@ function updateTrack(userDataDir, id, patch) {
 }
 
 function removeTrack(userDataDir, id) {
+  const track = loadLibrary(userDataDir).find((t) => t.id === id);
+  if (track && track.previewPath) {
+    try {
+      fs.rmSync(track.previewPath, { force: true });
+    } catch {
+      // best-effort — a missing/locked file here shouldn't block removal
+    }
+  }
   const tracks = loadLibrary(userDataDir).filter((t) => t.id !== id);
   saveLibrary(userDataDir, tracks);
   return tracks;
+}
+
+// Previews are never authoritative — always regenerable from a track's
+// path + previewParams (mastering one track takes about a second), so
+// deleting one is never destructive, only "recompute it next time it's
+// needed". That's what makes the sweep below safe to run unconditionally
+// on every launch rather than needing careful, risky bookkeeping.
+
+function previewsDir(userDataDir) {
+  const dir = path.join(userDataDir, 'previews');
+  fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+function previewPathForTrack(userDataDir, trackId) {
+  return path.join(previewsDir(userDataDir), `${trackId}.flac`);
+}
+
+const PREVIEW_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+
+function sweepPreviews(userDataDir) {
+  const dir = previewsDir(userDataDir);
+  const liveIds = new Set(loadLibrary(userDataDir).map((t) => t.id));
+  const now = Date.now();
+  let removed = 0;
+
+  for (const entry of fs.readdirSync(dir)) {
+    const id = entry.replace(/\.flac$/, '');
+    const filePath = path.join(dir, entry);
+    const isOrphan = !liveIds.has(id);
+    const isStale = !isOrphan && now - fs.statSync(filePath).mtimeMs > PREVIEW_MAX_AGE_MS;
+    if (isOrphan || isStale) {
+      fs.rmSync(filePath, { force: true });
+      removed++;
+    }
+  }
+  return removed;
 }
 
 // Named chain presets: a snapshot of Chain view's params object under a
@@ -112,4 +172,7 @@ module.exports = {
   loadPresets,
   savePreset,
   deletePreset,
+  previewsDir,
+  previewPathForTrack,
+  sweepPreviews,
 };
