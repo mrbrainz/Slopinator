@@ -63,7 +63,25 @@ function renderRow(track) {
   tagEl.textContent = tag;
   tagWrap.appendChild(tagEl);
 
-  row.append(dotEl, nameWrap, meterEl(track.lufs, 'LUFS', warn), tagWrap, meterEl(track.truePeakDb, 'dBTP', warn));
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'row-remove-btn';
+  removeBtn.title = 'Remove from library';
+  removeBtn.textContent = '✕';
+  removeBtn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    if (!confirm(`Remove "${track.name}" from your library? This won't delete the original file.`)) return;
+    await window.slopinator.libraryRemove(track.id);
+    await refreshLibrary();
+  });
+
+  row.append(
+    dotEl,
+    nameWrap,
+    meterEl(track.lufs, 'LUFS', warn),
+    tagWrap,
+    meterEl(track.truePeakDb, 'dBTP', warn),
+    removeBtn
+  );
 
   row.addEventListener('click', () => {
     if (window.selectChainInputAndNavigate) window.selectChainInputAndNavigate(track.path, track.id);
