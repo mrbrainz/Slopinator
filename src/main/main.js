@@ -113,6 +113,14 @@ ipcMain.handle('run-master', async (event, { inputPath, outputPath, params }) =>
   return runMasterPy(args, event.sender);
 });
 
+// Re-encodes already-mastered audio (e.g. a Chain view preview) to a
+// different container/bit depth without re-running the mastering chain —
+// lets Export reuse a preview instead of redoing the full DSP pass.
+ipcMain.handle('run-transcode', async (event, { inputPath, outputPath, bitDepth }) => {
+  const args = [inputPath, outputPath, '--transcode', '--bit-depth', bitDepth];
+  return runMasterPy(args, event.sender);
+});
+
 ipcMain.handle('classify-path', async (_event, targetPath) => {
   try {
     return fs.statSync(targetPath).isDirectory() ? 'directory' : 'file';

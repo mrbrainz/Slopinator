@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('slopinator', {
   pickInputFile: () => ipcRenderer.invoke('pick-input-file'),
   getPreviewPath: (trackId) => ipcRenderer.invoke('get-preview-path', trackId),
   runMaster: (args) => ipcRenderer.invoke('run-master', args),
+  runTranscode: (args) => ipcRenderer.invoke('run-transcode', args),
   runMasterBatch: (args) => ipcRenderer.invoke('run-master-batch', args),
   classifyPath: (path) => ipcRenderer.invoke('classify-path', path),
   libraryList: () => ipcRenderer.invoke('library-list'),

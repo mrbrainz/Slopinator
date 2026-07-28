@@ -174,6 +174,23 @@ duplicate every file. If you're adding a third place that writes a real
 output file, give it the same `exportedAt`-style bookkeeping rather than
 inventing a fourth path field.
 
+**Export reuses the preview when it can, instead of re-running the whole
+chain (PR #33).** The preview file is already a full render of
+`previewParams`, always at `PCM_16` (Chain view's Master button never
+passes a `bitDepth`). So a WAV-16/FLAC-16 export of a track using its
+dialed-in params (no per-row preset override — see below) skips straight
+to `master.py --transcode`, which just decodes+re-encodes the preview
+file with no EQ/mono-bass/saturation/loudness/limiter pass at all — the
+DSP work is already baked into the preview's bytes. A WAV-24 export
+always does a full fresh render from the original source, because the
+preview never held 24-bit precision to begin with; same for any track
+where the Export row's preset dropdown overrides the dialed-in params,
+since then the preview's audio no longer matches what should ship.
+`export-view.js`'s `exportOverrides` map holds those per-row overrides
+in memory only (cleared on refresh/successful export) — they never
+touch `previewParams`, so overriding a track's target for one export
+doesn't change anything Chain view or Compare see.
+
 **Previews are never authoritative — always regenerable** from
 `previewParams` (mastering one track takes about a second), which is
 what makes it safe to garbage-collect them aggressively:

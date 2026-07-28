@@ -1,20 +1,29 @@
 // Export screen: batch-export tracks that haven't already been exported
-// to a chosen folder. Each track re-runs master.py with the exact params
-// it was dialed in with in Chain view (previewParams — see
-// docs/context.md's "Preview vs export" section); tracks never opened
-// there fall back to fixed defaults, and the queue row says "(default)"
-// so that's not mistaken for a real per-track choice. Progress is
-// stepped (queued / rendering / done) — master.py reports nothing
-// mid-file, so there's no honest percentage to show (docs/todos.md).
+// to a chosen folder. Each queued row can be exported individually too,
+// via its own "Export…" button — not just as part of the whole-queue run.
+// See docs/context.md's "Preview vs export" section for the preview/export
+// split this all builds on.
 //
-// This is the only place a real, user-chosen destination file ever gets
-// written — Chain view's Master button renders to an app-managed preview
-// slot instead. Export never touches the preview fields; it only records
-// exportedPath/exportedAt, which is also what keeps the queue from
-// re-exporting (and re-naming, and duplicating) something already
-// written out: a track is only queued if it's never been exported, or
-// has been re-mastered in Chain view since its last export
-// (previewedAt > exportedAt).
+// Target loudness per track: if a track was dialed in Chain view, its
+// previewParams are used by default; otherwise it falls back to the
+// "Club" named preset (matching Chain view's own default — see
+// src/main/library.js's DEFAULT_PRESETS). Either way, the row's preset
+// dropdown can override the target for this export only, without
+// touching what's saved in Chain view.
+//
+// Reusing the preview instead of re-rendering: a track's preview
+// (previewPath) is already a full render of previewParams at PCM_16 (see
+// chain-view.js's Master button — it never passes a bitDepth). So a
+// WAV-16/FLAC-16 export of a track using its dialed-in params (no preset
+// override) can skip the whole EQ/mono-bass/saturation/loudness/limiter
+// chain and just re-encode the existing preview file
+// (master.py --transcode). A WAV-24 export, or any export using an
+// overridden preset, always does a full fresh render — the preview never
+// held 24-bit precision, and an override means the preview's audio
+// doesn't match what should be exported.
+//
+// Progress is stepped (queued / rendering / done) — master.py reports
+// nothing mid-file, so there's no honest percentage (docs/todos.md).
 
 const exportCountEl = document.getElementById('export-count');
 const exportEmptyEl = document.getElementById('export-empty');
@@ -29,36 +38,35 @@ const EXPORT_FORMATS = {
   flac16: { bitDepth: 'PCM_16', ext: 'flac' },
 };
 
-const EXPORT_PRESETS = { '-14': 'streaming', '-11': 'soundcloud', '-8': 'club' };
-
-// master.py's own defaults (matches src/renderer/chain-view.js's initial
-// params) — used only for tracks that were never mastered in Chain view.
+// Last-resort fallback if the "Club" preset was deleted — mirrors
+// library.js's DEFAULT_PRESETS Club entry so behavior stays consistent
+// even without it.
 const DEFAULT_EXPORT_PARAMS = {
   eq: true,
   monoBass: true,
-  crossover: 120,
+  crossover: 80,
   saturation: true,
-  saturationAmount: 0.05,
-  target: -14,
-  ceiling: -1.0,
+  saturationAmount: 0.08,
+  target: -8,
+  ceiling: -0.3,
 };
 
 let exportQueue = [];
+let cachedPresets = [];
 let isExporting = false;
 
-function trackExportParams(track) {
-  return track.previewParams || DEFAULT_EXPORT_PARAMS;
+// trackId -> preset object ({name, params}) chosen from a row's dropdown,
+// overriding that track's export target for this session only.
+const exportOverrides = new Map();
+
+function fallbackPreset(presets) {
+  return presets.find((p) => p.name === 'Club') || { name: null, params: DEFAULT_EXPORT_PARAMS };
 }
 
-function presetNameForTarget(target) {
-  return EXPORT_PRESETS[String(target)] || null;
-}
-
-function targetLabel(track) {
-  const params = trackExportParams(track);
-  const preset = presetNameForTarget(params.target);
-  const label = `${params.target} LUFS${preset ? ` ${preset}` : ''}`;
-  return track.previewParams ? label : `${label} (default)`;
+function effectiveParams(track, presets) {
+  const override = exportOverrides.get(track.id);
+  if (override) return override.params;
+  return track.previewParams || fallbackPreset(presets).params;
 }
 
 // Needs exporting if it's analyzed/mastered AND (never exported, or
@@ -69,7 +77,7 @@ function needsExport(track) {
   return Boolean(track.previewedAt && track.previewedAt > track.exportedAt);
 }
 
-function setRowState(row, state) {
+function setRowState(row, state, label) {
   const fill = row.querySelector('.progress-fill');
   const statusEl = row.querySelector('.export-status');
   if (state === 'queued') {
@@ -80,7 +88,7 @@ function setRowState(row, state) {
     fill.style.width = '50%';
     fill.style.background = 'var(--amber)';
     statusEl.className = 'mini-meter warn export-status';
-    statusEl.textContent = 'Rendering…';
+    statusEl.textContent = label || 'Rendering…';
   } else if (state === 'done') {
     fill.style.width = '100%';
     fill.style.background = 'var(--teal)';
@@ -94,17 +102,50 @@ function setRowState(row, state) {
   }
 }
 
-function renderExportRow(track) {
+function presetOptionLabel(preset) {
+  return `${preset.name} (${preset.params.target} LUFS)`;
+}
+
+function renderPresetSelect(track, presets) {
+  const select = document.createElement('select');
+  select.className = 'export-preset-select';
+
+  const dialedIn = document.createElement('option');
+  dialedIn.value = '';
+  dialedIn.textContent = track.previewParams
+    ? `Dialed in Chain view (${track.previewParams.target} LUFS)`
+    : `Default — ${presetOptionLabel(fallbackPreset(presets))}`;
+  select.appendChild(dialedIn);
+
+  presets.forEach((preset) => {
+    const option = document.createElement('option');
+    option.value = preset.name;
+    option.textContent = presetOptionLabel(preset);
+    select.appendChild(option);
+  });
+
+  const override = exportOverrides.get(track.id);
+  select.value = override ? override.name : '';
+
+  select.addEventListener('change', () => {
+    if (!select.value) {
+      exportOverrides.delete(track.id);
+    } else {
+      const preset = presets.find((p) => p.name === select.value);
+      if (preset) exportOverrides.set(track.id, preset);
+    }
+  });
+
+  return select;
+}
+
+function renderExportRow(track, presets) {
   const row = document.createElement('div');
   row.className = 'export-row';
 
   const name = document.createElement('div');
   name.className = 'track-name';
   name.textContent = track.name;
-
-  const target = document.createElement('div');
-  target.className = 'mini-meter';
-  target.textContent = targetLabel(track);
 
   const progressTrack = document.createElement('div');
   progressTrack.className = 'progress-track';
@@ -115,7 +156,16 @@ function renderExportRow(track) {
   const statusEl = document.createElement('div');
   statusEl.className = 'mini-meter empty export-status';
 
-  row.append(name, target, progressTrack, statusEl);
+  const actionBtn = document.createElement('button');
+  actionBtn.className = 'btn ghost export-row-btn';
+  actionBtn.textContent = 'Export…';
+  actionBtn.addEventListener('click', async () => {
+    const folder = await window.slopinator.pickExportFolder();
+    if (!folder) return;
+    await runQueue([track], row, folder);
+  });
+
+  row.append(name, renderPresetSelect(track, presets), progressTrack, statusEl, actionBtn);
   setRowState(row, 'queued');
   return row;
 }
@@ -123,8 +173,15 @@ function renderExportRow(track) {
 async function refreshExport() {
   if (isExporting) return; // don't rebuild rows out from under a running export
 
-  const tracks = await window.slopinator.libraryList();
+  const [tracks, presets] = await Promise.all([window.slopinator.libraryList(), window.slopinator.presetsList()]);
+  cachedPresets = presets;
   exportQueue = tracks.filter(needsExport);
+
+  const liveIds = new Set(exportQueue.map((t) => t.id));
+  Array.from(exportOverrides.keys()).forEach((id) => {
+    if (!liveIds.has(id)) exportOverrides.delete(id);
+  });
+
   const alreadyExportedCount = tracks.filter(
     (t) => (t.status === 'needs_mastering' || t.status === 'mastered') && !needsExport(t)
   ).length;
@@ -139,7 +196,7 @@ async function refreshExport() {
   exportContentEl.style.display = hasTracks ? '' : 'none';
 
   exportRowsEl.innerHTML = '';
-  exportQueue.forEach((track) => exportRowsEl.appendChild(renderExportRow(track)));
+  exportQueue.forEach((track) => exportRowsEl.appendChild(renderExportRow(track, cachedPresets)));
 }
 
 function exportOutputPath(folder, track, ext) {
@@ -147,52 +204,74 @@ function exportOutputPath(folder, track, ext) {
   return `${folder}/${base}_mastered.${ext}`;
 }
 
-async function runExport(folder) {
+// Runs export for one or more tracks against their matching rows,
+// reusing each track's rendered preview (a fast re-encode, no DSP) when
+// the target format matches what the preview already is (PCM_16) and
+// nothing about the target params has been overridden for this export.
+async function runQueue(tracks, rows, folder) {
   const { bitDepth, ext } = EXPORT_FORMATS[exportFormatEl.value];
   isExporting = true;
   exportRunBtn.disabled = true;
+  const allControls = exportRowsEl.querySelectorAll('.export-row-btn, .export-preset-select');
+  allControls.forEach((el) => (el.disabled = true));
 
-  const rows = Array.from(exportRowsEl.children);
+  const rowList = Array.isArray(rows) ? rows : [rows];
   let failures = 0;
 
-  for (let i = 0; i < exportQueue.length; i++) {
-    const track = exportQueue[i];
-    setRowState(rows[i], 'rendering');
-
+  for (let i = 0; i < tracks.length; i++) {
+    const track = tracks[i];
+    const row = rowList[i];
     const outputPath = exportOutputPath(folder, track, ext);
-    const params = { ...trackExportParams(track), bitDepth };
-    const result = await window.slopinator.runMaster({ inputPath: track.path, outputPath, params });
+    const params = { ...effectiveParams(track, cachedPresets), bitDepth };
 
-    setRowState(rows[i], result.success ? 'done' : 'failed');
+    const reusable =
+      bitDepth === 'PCM_16' &&
+      !exportOverrides.has(track.id) &&
+      Boolean(track.previewParams) &&
+      Boolean(track.previewPath) &&
+      (await window.slopinator.classifyPath(track.previewPath)) === 'file';
+
+    setRowState(row, 'rendering', reusable ? 'Reusing preview…' : 'Rendering…');
+
+    const result = reusable
+      ? await window.slopinator.runTranscode({ inputPath: track.previewPath, outputPath, bitDepth })
+      : await window.slopinator.runMaster({ inputPath: track.path, outputPath, params });
+
+    setRowState(row, result.success ? 'done' : 'failed');
     if (result.success) {
-      // Deliberately not touching previewPath/previewParams/previewedAt
-      // here — those are Chain view's own slot, and this track may never
-      // have been opened there (using DEFAULT_EXPORT_PARAMS instead).
-      // exportedAt is what the needsExport() filter checks, so without
-      // this a track exported here would just get exported again, under
-      // the same name, every single time this button is clicked.
-      await window.slopinator.libraryUpdate(track.id, {
-        status: 'mastered',
-        previewPreset: presetNameForTarget(params.target),
-        exportedPath: outputPath,
-        exportedAt: new Date().toISOString(),
-      });
+      const override = exportOverrides.get(track.id);
+      // Deliberately not touching previewPath/previewParams here — those
+      // are Chain view's own slot, and this track may never have been
+      // opened there. exportedAt is what needsExport() checks, so
+      // without this a track exported here would just get exported
+      // again, under the same name, every time.
+      const patch = { status: 'mastered', exportedPath: outputPath, exportedAt: new Date().toISOString() };
+      if (override) patch.previewPreset = override.name;
+      else if (!track.previewParams) patch.previewPreset = fallbackPreset(cachedPresets).name;
+      await window.slopinator.libraryUpdate(track.id, patch);
+      exportOverrides.delete(track.id);
     } else {
       failures++;
     }
   }
 
-  exportCountEl.textContent = failures
-    ? `Done — ${failures} of ${exportQueue.length} failed`
-    : `Exported ${exportQueue.length} track${exportQueue.length === 1 ? '' : 's'} to ${folder}`;
-
   isExporting = false;
   exportRunBtn.disabled = false;
+  allControls.forEach((el) => (el.disabled = false));
+  return failures;
 }
 
 exportRunBtn.addEventListener('click', async () => {
   const folder = await window.slopinator.pickExportFolder();
-  if (folder) await runExport(folder);
+  if (!folder) return;
+
+  const tracks = exportQueue.slice();
+  const rows = Array.from(exportRowsEl.children);
+  const failures = await runQueue(tracks, rows, folder);
+
+  exportCountEl.textContent = failures
+    ? `Done — ${failures} of ${tracks.length} failed`
+    : `Exported ${tracks.length} track${tracks.length === 1 ? '' : 's'} to ${folder}`;
 });
 
 document.addEventListener('screen-activated', (e) => {
