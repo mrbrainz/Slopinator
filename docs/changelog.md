@@ -157,6 +157,13 @@ All notable changes to this project are documented here. Format is based on
   fresh render, since the preview never held 24-bit precision and an
   override means the preview's audio doesn't match what should ship.
   New `run-transcode` IPC handler (#33)
+- Elapsed / total time counter (`0:00 / 0:00`-style) under every
+  waveform — Chain view's, and both of Compare's before/after. Total
+  comes from `getPeaks()`'s own `duration_sec` (known as soon as the
+  waveform renders, independent of whichever file the shared player
+  currently has loaded); elapsed comes from the new
+  `window.player.getCurrentTime()` during playback, and updates
+  instantly on click too, alongside the existing bar highlighting (#35)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global
