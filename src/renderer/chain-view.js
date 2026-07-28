@@ -332,6 +332,7 @@ async function loadWaveform(path) {
 }
 
 playBtn.addEventListener('click', async () => {
+  window.player.setOwner('chain');
   // The player is shared across views — another view (e.g. Compare) may
   // have loaded something else since we last called player.load(inputPath).
   if (window.player.getCurrentPath() !== inputPath) {
@@ -342,14 +343,18 @@ playBtn.addEventListener('click', async () => {
 });
 
 window.player.onTimeUpdate((fraction) => {
-  if (window.player.getCurrentPath() !== inputPath) return;
+  // Chain view's inputPath and Compare's originalPath are frequently the
+  // exact same source file — the owner check is what stops playback
+  // started from Compare (or vice versa) from also driving this screen's
+  // progress UI. See player.js's currentOwner comment.
+  if (window.player.getCurrentOwner() !== 'chain' || window.player.getCurrentPath() !== inputPath) return;
   const playedCount = Math.floor(fraction * waveformBars.length);
   waveformBars.forEach((bar, i) => bar.classList.toggle('played', i < playedCount));
   updateWaveTime(window.player.getCurrentTime());
 });
 
 window.player.onEnded(() => {
-  if (window.player.getCurrentPath() !== inputPath) return;
+  if (window.player.getCurrentOwner() !== 'chain' || window.player.getCurrentPath() !== inputPath) return;
   playBtn.textContent = '▶ Play';
 });
 
@@ -358,6 +363,7 @@ waveformEl.addEventListener('click', async (e) => {
   const rect = waveformEl.getBoundingClientRect();
   const fraction = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
 
+  window.player.setOwner('chain');
   if (window.player.getCurrentPath() !== inputPath) {
     try {
       await window.player.load(inputPath);
