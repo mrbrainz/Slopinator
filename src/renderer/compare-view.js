@@ -24,17 +24,20 @@ const exportBtn = document.getElementById('compare-export-btn');
 
 let originalPath = null;
 let previewPath = null;
+let waveBeforeBars = [];
+let waveAfterBars = [];
 
 async function renderCompareWave(container, path) {
   container.innerHTML = '';
   const result = await window.slopinator.getPeaks(path, 60);
-  if (!result.success) return;
+  if (!result.success) return [];
   result.data.peaks.forEach((peak) => {
     const bar = document.createElement('div');
     bar.className = 'bar';
     bar.style.height = `${6 + peak * 48}px`;
     container.appendChild(bar);
   });
+  return Array.from(container.children);
 }
 
 function resetListenButtons() {
@@ -95,16 +98,31 @@ function waveformClickFraction(container, clientX) {
   return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
 }
 
-waveBeforeEl.addEventListener('click', (e) =>
-  seekTo(originalPath, waveformClickFraction(waveBeforeEl, e.clientX), listenBeforeBtn, 'original')
-);
-waveAfterEl.addEventListener('click', (e) =>
-  seekTo(previewPath, waveformClickFraction(waveAfterEl, e.clientX), listenAfterBtn, 'mastered')
-);
+function highlightPlayed(bars, fraction) {
+  const playedCount = Math.floor(fraction * bars.length);
+  bars.forEach((bar, i) => bar.classList.toggle('played', i < playedCount));
+}
+
+waveBeforeEl.addEventListener('click', (e) => {
+  const fraction = waveformClickFraction(waveBeforeEl, e.clientX);
+  highlightPlayed(waveBeforeBars, fraction);
+  seekTo(originalPath, fraction, listenBeforeBtn, 'original');
+});
+waveAfterEl.addEventListener('click', (e) => {
+  const fraction = waveformClickFraction(waveAfterEl, e.clientX);
+  highlightPlayed(waveAfterBars, fraction);
+  seekTo(previewPath, fraction, listenAfterBtn, 'mastered');
+});
 
 window.player.onEnded(() => {
   const current = window.player.getCurrentPath();
   if (current === originalPath || current === previewPath) resetListenButtons();
+});
+
+window.player.onTimeUpdate((fraction) => {
+  const current = window.player.getCurrentPath();
+  if (current === originalPath) highlightPlayed(waveBeforeBars, fraction);
+  else if (current === previewPath) highlightPlayed(waveAfterBars, fraction);
 });
 
 adjustBtn.addEventListener('click', () => activateTab('chain'));
@@ -178,7 +196,10 @@ async function refreshCompare() {
   const monoBassUsed = track.previewParams && track.previewParams.monoBass;
   afterBassEl.textContent = monoBassUsed ? `mono below ${track.previewParams.crossover}Hz` : 'unlinked';
 
-  await Promise.all([renderCompareWave(waveBeforeEl, track.path), renderCompareWave(waveAfterEl, track.previewPath)]);
+  [waveBeforeBars, waveAfterBars] = await Promise.all([
+    renderCompareWave(waveBeforeEl, track.path),
+    renderCompareWave(waveAfterEl, track.previewPath),
+  ]);
 }
 
 document.addEventListener('screen-activated', (e) => {
