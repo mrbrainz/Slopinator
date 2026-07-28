@@ -25,6 +25,26 @@ I want to create a fully fledged Electron app
 
 ## Known gotchas
 
+- **`preload.js` runs under Electron's sandboxed preload (default `true`
+  since Electron 20; this app is on Electron 31 and never sets
+  `sandbox: false`), which has no generic `require('fs')`/`require('path')`
+  — only `require('electron')` and a curated subset of Node.** Adding a
+  direct `require('fs')` (or similar) call in `preload.js` throws at
+  parse time, which silently kills the *entire* preload script before
+  `contextBridge.exposeInMainWorld()` ever runs — `window.slopinator`
+  ends up completely undefined, breaking every single feature that
+  depends on it, not just whatever you were adding. This happened for
+  real (#38's build-info footer, fixed immediately after). Anything
+  preload needs that isn't already exposed goes through an
+  `ipcMain.handle()` in `main.js` (which is never sandboxed) and an
+  `ipcRenderer.invoke()` wrapper in `preload.js`, same as everything
+  else — never reach for a generic Node built-in directly in `preload.js`.
+  This class of bug is also easy to miss in dev: `npm start`'s exit code
+  alone won't show it (Electron doesn't crash the main process just
+  because preload throws), and this sandboxed shell environment has no
+  display to actually open/inspect the window — a broken preload needs
+  an actual visual check (or reading `preload.js` for anything beyond
+  `require('electron')`), not just "the process didn't immediately die."
 - **macOS trashes Electron.app as "malware" after `npm install`.** This is
   Gatekeeper/AMFI rejecting the prebuilt Electron binary's missing/invalid
   code signature ("no CMS blob" / "Unrecoverable CT signature issue"), not

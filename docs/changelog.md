@@ -327,6 +327,18 @@ All notable changes to this project are documented here. Format is based on
   a full reload, where `body.cringe` is applied before first paint,
   actually started it). `settings.js`'s `applyMode()` now calls the
   marquee's own `start()` method when switching to Cringe (#37)
+- #38's build-info footer broke *every* `window.slopinator.*` call —
+  including Library import — in any real (non-dev-shortcut) launch:
+  `preload.js` runs under Electron's sandboxed preload (default since
+  Electron 20; this app is on 31 and never opts out), which has no
+  generic `require('fs')`/`require('path')`. Adding those directly threw
+  at preload parse time, silently killing the whole script before
+  `contextBridge.exposeInMainWorld()` ever ran, so `window.slopinator`
+  was `undefined` everywhere — not just for the build number. Moved the
+  `build-info.json` read into `main.js` (never sandboxed) behind a new
+  `get-build-info` IPC handler; `preload.js` now only calls
+  `ipcRenderer.invoke('get-build-info')`, same pattern as everything else
+  it exposes (#39)
 
 ## [0.1.0] - 2026-07-25
 

@@ -15,7 +15,8 @@ document.querySelectorAll('.tab').forEach((tab) => {
 // guessing whether a running/packaged app is stale — see
 // scripts/generate-build-info.js.
 const buildFooterEl = document.getElementById('build-footer');
-if (buildFooterEl && window.slopinator && window.slopinator.buildInfo) {
-  const { buildNumber, commit } = window.slopinator.buildInfo;
-  buildFooterEl.textContent = `Build #${buildNumber} (${commit})`;
+if (buildFooterEl && window.slopinator && window.slopinator.getBuildInfo) {
+  window.slopinator.getBuildInfo().then(({ buildNumber, commit }) => {
+    buildFooterEl.textContent = `Build #${buildNumber} (${commit})`;
+  });
 }
