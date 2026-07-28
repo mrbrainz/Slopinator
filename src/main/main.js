@@ -27,7 +27,8 @@ let MASTER_CMD, MASTER_PREFIX_ARGS;
 // which has no packaged bundle to draw one from.
 let DEV_ICON_PATH = null;
 if (app.isPackaged) {
-  MASTER_CMD = path.join(process.resourcesPath, 'master-bin/master');
+  const masterBinName = process.platform === 'win32' ? 'master.exe' : 'master';
+  MASTER_CMD = path.join(process.resourcesPath, 'master-bin', masterBinName);
   MASTER_PREFIX_ARGS = [];
 } else {
   const PROJECT_ROOT = path.join(__dirname, '../..');

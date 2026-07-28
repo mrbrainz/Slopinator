@@ -7,7 +7,7 @@
   "scripts": {
     "prestart": "node scripts/generate-build-info.js",
     "start": "electron .",
-    "freeze-python": "bash scripts/freeze-python.sh",
+    "freeze-python": "node scripts/freeze-python.js",
     "prepack": "npm run freeze-python && node scripts/generate-build-info.js",
     "pack": "electron-builder --dir",
     "predist": "npm run freeze-python && node scripts/generate-build-info.js",
@@ -39,6 +39,18 @@
     },
     "dmg": {
       "format": "ULFO"
+    },
+    "win": {
+      "target": "portable"
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "category": "Audio"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "mrbrainz",
+      "repo": "Slopinator"
     },
     "directories": {
       "output": "dist",
