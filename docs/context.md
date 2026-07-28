@@ -25,6 +25,22 @@ I want to create a fully fledged Electron app
 
 ## Known gotchas
 
+- **v0.1.0 got tagged and published without ever cutting it in
+  `changelog.md`** — the tag/CI/GitHub-release side of a release
+  happened, but the "rename `[Unreleased]` to the new version" step
+  (documented in changelog.md's own "Versioning" section) never did,
+  so `[Unreleased]` silently kept accumulating PRs #44 onward *underneath*
+  content that was already actually shipped. Had to be untangled by hand
+  when cutting v0.2.0 (splitting at the exact PR where the real release
+  happened, verified byte-for-byte against the original so nothing was
+  lost). There was also a pre-existing, unrelated `## [0.1.0]` entry at
+  the bottom of the file the whole time — a leftover placeholder for the
+  original pre-Electron `master.py` script, from before this project's
+  real versioning existed — which collided with the real GitHub v0.1.0
+  release once that got tagged; renamed to `[0.0.0]` to stop the clash.
+  **When actually cutting a release, do the changelog rename in the same
+  step as bumping `package.json`'s version and tagging — don't let
+  `[Unreleased]` outlive the tag.**
 - **electron-builder's auto-generated Windows `.ico` (from a single
   source PNG, no explicit `build.win.icon`) produced a corrupted
   taskbar icon** — garbled/rainbow-noise render instead of the actual

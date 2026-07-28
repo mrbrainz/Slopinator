@@ -7,6 +7,117 @@ All notable changes to this project are documented here. Format is based on
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Fixed
+
+## [0.2.0] - 2026-07-28
+
+### Added
+- New **Stereo Width** module in Chain view's rack, between Mono bass
+  and Saturation — a bypass toggle plus a 0–200% width slider (100% =
+  unchanged). `stereo_width()` in `master.py` does plain mid/side
+  processing (encode → scale the side channel → decode back); runs
+  after `mono_bass()` so widening only ever touches content that's
+  already safe to spread out, never fighting its below-crossover mono
+  safety. New `--width`/`--no-width` CLI flags,
+  `params.width`/`params.widthAmount` end to end (Chain view → IPC →
+  Export's per-track params/preset matching). All three built-in
+  presets updated: Streaming stays at 100% (needs to translate safely
+  across every playback system), Soundcloud and Club get a bit wider
+  (110%/115%) since headphones and a PA system both take extra size
+  well. `library.js`'s `loadPresets()` backfills width onto any
+  presets.json saved before this existed too (tuned value for a
+  built-in preset name, neutral 100% for a custom one) rather than
+  leaving it silently unset on already-existing installs — a one-time
+  migration, persisted back to disk, never touching already-mastered
+  tracks' own `previewParams` (a record of what was actually rendered,
+  not a template to retroactively rewrite). Compare screen gained a
+  "Stereo width" stat next to the existing "Stereo bass" one, showing
+  the mastered side's actual width setting (#45)
+
+### Changed
+- Upgraded Electron `31.7.7` → `43.2.0` and `electron-builder` `24.13.3`
+  → `26.15.3` (12 major Electron versions — latest stable, prompted by
+  Windows testing surfacing how far behind it had drifted). Discovered
+  along the way: `electron-builder` 26.x's `electronLanguages` option
+  now actually prunes `Electron Framework.framework`'s real locale
+  packs itself (it didn't in 24.x, which is why
+  `scripts/afterSign.js`'s manual `pruneFrameworkLocales()` existed) —
+  it now runs 0 times in practice, kept only as a defensive no-op.
+  `npm audit` flags 16 high-severity issues, all transitive
+  dev-tooling dependencies inside `electron-builder` itself (glob/
+  brace-expansion, used only at build time, never shipped in the app)
+  — not addressed here, tracked as a separate follow-up. Verified
+  locally: dev launch, and a full `npm run dist` (mac) producing a
+  correctly signed, launchable `.app`/`.dmg`; Windows/Linux builds are
+  only verified by the next CI release run, same as every other
+  cross-platform change this project has made (#48)
+
+### Fixed
+- Windows: nothing played when hitting play in Chain view/Compare —
+  `player.js`'s `toFileUrl()` split paths on `/` only, so a Windows path
+  (backslashes, drive letter) never split at all and got
+  `encodeURIComponent`'d as one opaque segment, including the drive
+  letter's `:`, producing a `file://` URL Chromium couldn't resolve. Now
+  normalizes backslashes to `/` first and leaves a drive-letter segment
+  un-encoded (#46)
+- Windows: `master.py` crashed with `UnicodeEncodeError` from `cp1252`
+  the moment a track's path contained a character outside that codepage
+  (e.g. a non-breaking hyphen), since stdout only had line-buffering
+  reconfigured, not encoding. `sys.stdout`/`sys.stderr` now force
+  `encoding="utf-8", errors="replace"` (#46)
+- Mastering any file crashed with `AttributeError: module 'math' has no
+  attribute 'fma'` on any Python older than 3.13 (`math.fma` was added in
+  3.13) — hit on a fresh Windows venv reported after #46 fixed the
+  playback/encoding bugs, but not actually Windows-specific: the frozen
+  `master-bin` picks up whatever Python built it, and this app never
+  pinned a minimum version anywhere. `dsp.py`'s `_zi_transient()` now
+  falls back to a plain multiply-add when `math.fma` isn't available;
+  the fallback double-rounds instead of single-rounding, differing at
+  the last bit or two, which is inaudible and still far inside the
+  bounded-transient's precision budget (#47)
+- The first real release run: `release-notes`'s `gh release edit
+  "${{ github.ref_name }}"` failed with "release not found". Root
+  cause: electron-builder names its GitHub release
+  `v<package.json's "version">` regardless of what git tag actually
+  triggered the build (`vPrefixedTagName`, on by default) — the pushed
+  tag was `v0.1`, `package.json` was still `"0.1.0"`, so
+  electron-builder published to `v0.1.0` while the job kept looking for
+  a release literally named `v0.1`. `release-notes` now re-derives the
+  real tag straight from `package.json` (matching how electron-builder
+  computes it) instead of trusting the git ref that triggered the
+  workflow (#44)
+- Adding the Width module's rack tile (6 modules now, up from 5) made
+  Chain view need a horizontal scrollbar for the *whole page*, not just
+  the rack strip. `.chain` already had `overflow-x:auto` for exactly
+  this, but `.chain-main` (the rack's grid column in `.chain-layout`)
+  had no `min-width:0` — grid items default to `min-width:auto`, which
+  refuses to shrink below its content's intrinsic min size, so the
+  column blew out instead of clipping. Fixed the grid item, tightened
+  `.module` (112px min-width/12px margin → 90px/8px, now `flex:1 1
+  90px` so tiles fill any slack evenly instead of sitting at a fixed
+  size), and widened `.app-frame` (860px → 960px) and the window
+  (980px → 1080px) for real breathing room rather than a razor-thin
+  fit (#45)
+- Windows taskbar icon rendered as corrupted rainbow noise instead of
+  the actual artwork. electron-builder was auto-generating the `.ico`
+  from `assets/icon.png` (782×782, no explicit `build.win.icon`) at
+  build time, and that conversion produced garbage — macOS's `.icns`
+  generation from the same source was fine. New
+  `scripts/build-ico.js` packs pre-resized 16–256px PNGs into a proper
+  multi-resolution `.ico` directly (plain buffer-writing, no new
+  dependency — the ICO container format is simple enough), committed
+  as `assets/icon.ico` and wired in via `build.win.icon`, bypassing
+  electron-builder's auto-conversion entirely. Verified by extracting
+  the actual embedded icon resource from a locally cross-built `.exe`
+  and confirming it decodes as the real artwork, not just that the
+  build succeeded (#49)
+
+## [0.1.0] - 2026-07-28
+
+### Added
 - Electron project scaffold: main process, preload, minimal renderer, and
   electron-builder packaging config alongside the existing `master.py`
   chain (#1)
@@ -208,45 +319,8 @@ All notable changes to this project are documented here. Format is based on
   `dsp.py` against real scipy), and keeps `master.py`'s direct CLI
   usage as a secondary "advanced" section rather than the primary
   framing (#43)
-- New **Stereo Width** module in Chain view's rack, between Mono bass
-  and Saturation — a bypass toggle plus a 0–200% width slider (100% =
-  unchanged). `stereo_width()` in `master.py` does plain mid/side
-  processing (encode → scale the side channel → decode back); runs
-  after `mono_bass()` so widening only ever touches content that's
-  already safe to spread out, never fighting its below-crossover mono
-  safety. New `--width`/`--no-width` CLI flags,
-  `params.width`/`params.widthAmount` end to end (Chain view → IPC →
-  Export's per-track params/preset matching). All three built-in
-  presets updated: Streaming stays at 100% (needs to translate safely
-  across every playback system), Soundcloud and Club get a bit wider
-  (110%/115%) since headphones and a PA system both take extra size
-  well. `library.js`'s `loadPresets()` backfills width onto any
-  presets.json saved before this existed too (tuned value for a
-  built-in preset name, neutral 100% for a custom one) rather than
-  leaving it silently unset on already-existing installs — a one-time
-  migration, persisted back to disk, never touching already-mastered
-  tracks' own `previewParams` (a record of what was actually rendered,
-  not a template to retroactively rewrite). Compare screen gained a
-  "Stereo width" stat next to the existing "Stereo bass" one, showing
-  the mastered side's actual width setting (#45)
 
 ### Changed
-- Upgraded Electron `31.7.7` → `43.2.0` and `electron-builder` `24.13.3`
-  → `26.15.3` (12 major Electron versions — latest stable, prompted by
-  Windows testing surfacing how far behind it had drifted). Discovered
-  along the way: `electron-builder` 26.x's `electronLanguages` option
-  now actually prunes `Electron Framework.framework`'s real locale
-  packs itself (it didn't in 24.x, which is why
-  `scripts/afterSign.js`'s manual `pruneFrameworkLocales()` existed) —
-  it now runs 0 times in practice, kept only as a defensive no-op.
-  `npm audit` flags 16 high-severity issues, all transitive
-  dev-tooling dependencies inside `electron-builder` itself (glob/
-  brace-expansion, used only at build time, never shipped in the app)
-  — not addressed here, tracked as a separate follow-up. Verified
-  locally: dev launch, and a full `npm run dist` (mac) producing a
-  correctly signed, launchable `.app`/`.dmg`; Windows/Linux builds are
-  only verified by the next CI release run, same as every other
-  cross-platform change this project has made (#48)
 - README setup instructions now use a `.venv` instead of a global
   `pip install`, since Homebrew Python blocks global installs (#3)
 - `run-master`/`run-master-batch` IPC handlers take a full `params` object
@@ -432,66 +506,8 @@ All notable changes to this project are documented here. Format is based on
   matching preset's real name when it's an exact match, falling back to
   a plain "Custom" label only when the params have genuinely diverged
   from every saved preset (#41)
-- Windows: nothing played when hitting play in Chain view/Compare —
-  `player.js`'s `toFileUrl()` split paths on `/` only, so a Windows path
-  (backslashes, drive letter) never split at all and got
-  `encodeURIComponent`'d as one opaque segment, including the drive
-  letter's `:`, producing a `file://` URL Chromium couldn't resolve. Now
-  normalizes backslashes to `/` first and leaves a drive-letter segment
-  un-encoded (#46)
-- Windows: `master.py` crashed with `UnicodeEncodeError` from `cp1252`
-  the moment a track's path contained a character outside that codepage
-  (e.g. a non-breaking hyphen), since stdout only had line-buffering
-  reconfigured, not encoding. `sys.stdout`/`sys.stderr` now force
-  `encoding="utf-8", errors="replace"` (#46)
-- Mastering any file crashed with `AttributeError: module 'math' has no
-  attribute 'fma'` on any Python older than 3.13 (`math.fma` was added in
-  3.13) — hit on a fresh Windows venv reported after #46 fixed the
-  playback/encoding bugs, but not actually Windows-specific: the frozen
-  `master-bin` picks up whatever Python built it, and this app never
-  pinned a minimum version anywhere. `dsp.py`'s `_zi_transient()` now
-  falls back to a plain multiply-add when `math.fma` isn't available;
-  the fallback double-rounds instead of single-rounding, differing at
-  the last bit or two, which is inaudible and still far inside the
-  bounded-transient's precision budget (#47)
-- The first real release run: `release-notes`'s `gh release edit
-  "${{ github.ref_name }}"` failed with "release not found". Root
-  cause: electron-builder names its GitHub release
-  `v<package.json's "version">` regardless of what git tag actually
-  triggered the build (`vPrefixedTagName`, on by default) — the pushed
-  tag was `v0.1`, `package.json` was still `"0.1.0"`, so
-  electron-builder published to `v0.1.0` while the job kept looking for
-  a release literally named `v0.1`. `release-notes` now re-derives the
-  real tag straight from `package.json` (matching how electron-builder
-  computes it) instead of trusting the git ref that triggered the
-  workflow (#44)
-- Adding the Width module's rack tile (6 modules now, up from 5) made
-  Chain view need a horizontal scrollbar for the *whole page*, not just
-  the rack strip. `.chain` already had `overflow-x:auto` for exactly
-  this, but `.chain-main` (the rack's grid column in `.chain-layout`)
-  had no `min-width:0` — grid items default to `min-width:auto`, which
-  refuses to shrink below its content's intrinsic min size, so the
-  column blew out instead of clipping. Fixed the grid item, tightened
-  `.module` (112px min-width/12px margin → 90px/8px, now `flex:1 1
-  90px` so tiles fill any slack evenly instead of sitting at a fixed
-  size), and widened `.app-frame` (860px → 960px) and the window
-  (980px → 1080px) for real breathing room rather than a razor-thin
-  fit (#45)
-- Windows taskbar icon rendered as corrupted rainbow noise instead of
-  the actual artwork. electron-builder was auto-generating the `.ico`
-  from `assets/icon.png` (782×782, no explicit `build.win.icon`) at
-  build time, and that conversion produced garbage — macOS's `.icns`
-  generation from the same source was fine. New
-  `scripts/build-ico.js` packs pre-resized 16–256px PNGs into a proper
-  multi-resolution `.ico` directly (plain buffer-writing, no new
-  dependency — the ICO container format is simple enough), committed
-  as `assets/icon.ico` and wired in via `build.win.icon`, bypassing
-  electron-builder's auto-conversion entirely. Verified by extracting
-  the actual embedded icon resource from a locally cross-built `.exe`
-  and confirming it decodes as the real artwork, not just that the
-  build succeeded (#49)
 
-## [0.1.0] - 2026-07-25
+## [0.0.0] - 2026-07-25
 
 ### Added
 - Initial mastering chain: corrective EQ, mono bass, saturation, loudness
