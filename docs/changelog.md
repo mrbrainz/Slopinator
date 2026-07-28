@@ -310,6 +310,12 @@ All notable changes to this project are documented here. Format is based on
   initiated playback/seek (`'chain'`/`'compare-before'`/`'compare-after'`);
   each screen's progress handlers now gate on owner *and* path instead of
   path alone (#36)
+- The `<marquee>` in Cringe mode only auto-scrolls if it's already
+  visible at layout time — it's `display:none` in normal mode, so
+  toggling to Cringe via the settings menu left it sitting frozen (only
+  a full reload, where `body.cringe` is applied before first paint,
+  actually started it). `settings.js`'s `applyMode()` now calls the
+  marquee's own `start()` method when switching to Cringe (#37)
 
 ## [0.1.0] - 2026-07-25
 
