@@ -64,6 +64,18 @@ I want to create a fully fledged Electron app
   instead — `package.json`'s `build.directories.buildResources` is set to
   `"assets"` to match. Don't put build resources in `build/`; they'd
   silently never get committed.
+- **The footer shows `Build #N (commit)` — check it before debugging a
+  reported bug that "isn't happening" in the code on `main`.** Several
+  bug reports in this project turned out to be a stale running/packaged
+  app that predated the fix already merged. `N` is `git rev-list --count
+  HEAD` (monotonically increasing, no counter file needed) and `commit`
+  is the short hash, `+dirty` if there were uncommitted changes at build
+  time — both generated fresh by `scripts/generate-build-info.js` on
+  every `npm start`/`pack`/`dist` (`prestart`/`prepack`/`predist` in
+  `package.json`), written to `src/main/build-info.json` (gitignored,
+  regenerated every run) and read by `preload.js`. If the footer's build
+  number is older than the fix in question, the fix is real — the user
+  just needs to relaunch (`npm start`) or rebuild (`npm run dist`).
 
 ## App size (approach + facts, PRs #22-#23)
 

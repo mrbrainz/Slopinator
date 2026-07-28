@@ -5,11 +5,12 @@
   "description": "Audio mastering app wrapping the master.py chain",
   "main": "src/main/main.js",
   "scripts": {
+    "prestart": "node scripts/generate-build-info.js",
     "start": "electron .",
     "freeze-python": "bash scripts/freeze-python.sh",
-    "prepack": "npm run freeze-python",
+    "prepack": "npm run freeze-python && node scripts/generate-build-info.js",
     "pack": "electron-builder --dir",
-    "predist": "npm run freeze-python",
+    "predist": "npm run freeze-python && node scripts/generate-build-info.js",
     "dist": "electron-builder"
   },
   "author": "",
