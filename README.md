@@ -178,11 +178,12 @@ handing to another machine as-is.
 
 ### Releasing
 
-Pushing a version tag builds and publishes all three platforms:
+Bump `"version"` in `package.json`, then push a matching tag to build
+and publish all three platforms:
 
 ```bash
-git tag v0.2
-git push origin v0.2
+git tag v0.2.0   # must match package.json's "version" exactly —
+git push origin v0.2.0   # electron-builder names its release from that, not the git tag
 ```
 
 `.github/workflows/release.yml` builds macOS/Windows/Linux in parallel

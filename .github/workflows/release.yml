@@ -5,8 +5,9 @@
 # building everything from one machine. See docs/context.md's "App size"
 # section for what master-bin actually is and why it exists.
 #
-# Triggered by pushing a version tag (e.g. `git tag v0.1 && git push
-# origin v0.1`), or manually via the Actions tab (workflow_dispatch).
+# Triggered by pushing a version tag matching package.json's "version"
+# (e.g. version "0.1.0" -> `git tag v0.1.0 && git push origin v0.1.0`),
+# or manually via the Actions tab (workflow_dispatch).
 #
 # macOS build is ad-hoc signed (scripts/afterSign.js) — satisfies
 # Gatekeeper on the machine that built it, not a machine it's copied to,
@@ -19,6 +20,16 @@
 # title/body from docs/changelog.md's [Unreleased] section (everything
 # since the last tag) once all three platform builds finish uploading;
 # review/trim/publish it by hand from the GitHub Releases tab.
+#
+# electron-builder names its GitHub release v<package.json's "version">
+# (vPrefixedTagName, on by default) — NOT whatever git tag actually
+# triggered this workflow. Push a tag matching package.json's version
+# (bump one to match the other first) to avoid confusion, but
+# release-notes below re-derives the real tag from package.json itself
+# regardless, so it finds the right release even if they diverge — this
+# bit the very first release (v0.1 pushed, package.json said 0.1.0,
+# electron-builder published as v0.1.0, and gh release edit "v0.1"
+# failed with "release not found").
 name: Release
 
 on:
@@ -76,12 +87,18 @@ jobs:
         run: |
           awk '/^## \[Unreleased\]/{flag=1; next} /^## \[/{flag=0} flag' docs/changelog.md > release-notes.md
 
+      - name: Determine the release tag electron-builder actually used
+        id: tag
+        run: |
+          version=$(grep -m1 '"version"' package.json | sed -E 's/.*"version": *"([^"]+)".*/\1/')
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
       - name: Set release title and notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release edit "${{ github.ref_name }}" \
-            --title "Slopinator ${{ github.ref_name }}" \
+          gh release edit "${{ steps.tag.outputs.tag }}" \
+            --title "Slopinator ${{ steps.tag.outputs.tag }}" \
             --notes-file release-notes.md \
             --draft \
             --repo "${{ github.repository }}"
