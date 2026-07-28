@@ -64,6 +64,21 @@ I want to create a fully fledged Electron app
   Before adding a new top-level helper to any renderer file, check it
   isn't already the name of something in a *different* renderer file —
   grep across `src/renderer/*.js`, not just the one you're editing.
+- **electron-builder names its GitHub release `v<package.json's
+  "version">` (`vPrefixedTagName`, on by default) — not whatever git tag
+  actually triggered the build.** Push a tag that doesn't match
+  `package.json`'s version exactly and you get two different tags: the
+  one you pushed (which triggered the workflow) and the one
+  electron-builder actually published assets to. Bit the very first
+  release: pushed `v0.1` with `package.json` still at `"0.1.0"`,
+  electron-builder published to `v0.1.0`, and the `release-notes` job's
+  `gh release edit "v0.1"` failed with "release not found" since that
+  tag had no release at all. `release-notes` re-derives the real tag
+  from `package.json` directly (`grep`/`sed`, see
+  `.github/workflows/release.yml`) rather than trusting the pushed tag,
+  so it's correct either way — but always bump `package.json`'s
+  `"version"` first and push a tag that matches it exactly, to avoid a
+  confusing second not-really-the-release tag sitting in `git tag`.
 - **macOS trashes Electron.app as "malware" after `npm install`.** This is
   Gatekeeper/AMFI rejecting the prebuilt Electron binary's missing/invalid
   code signature ("no CMS blob" / "Unrecoverable CT signature issue"), not

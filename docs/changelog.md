@@ -395,6 +395,17 @@ All notable changes to this project are documented here. Format is based on
   matching preset's real name when it's an exact match, falling back to
   a plain "Custom" label only when the params have genuinely diverged
   from every saved preset (#41)
+- The first real release run: `release-notes`'s `gh release edit
+  "${{ github.ref_name }}"` failed with "release not found". Root
+  cause: electron-builder names its GitHub release
+  `v<package.json's "version">` regardless of what git tag actually
+  triggered the build (`vPrefixedTagName`, on by default) — the pushed
+  tag was `v0.1`, `package.json` was still `"0.1.0"`, so
+  electron-builder published to `v0.1.0` while the job kept looking for
+  a release literally named `v0.1`. `release-notes` now re-derives the
+  real tag straight from `package.json` (matching how electron-builder
+  computes it) instead of trusting the git ref that triggered the
+  workflow (#44)
 
 ## [0.1.0] - 2026-07-25
 
