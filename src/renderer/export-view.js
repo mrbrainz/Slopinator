@@ -131,7 +131,7 @@ function renderPresetSelect(track, presets) {
     const matchedName = matchingPresetName(track.previewParams, presets);
     dialedIn.textContent = matchedName
       ? `${matchedName} (${track.previewParams.target} LUFS)`
-      : `Dialed in Chain view (${track.previewParams.target} LUFS)`;
+      : `Custom (${track.previewParams.target} LUFS)`;
   } else {
     dialedIn.textContent = `Default — ${presetOptionLabel(fallbackPreset(presets))}`;
   }

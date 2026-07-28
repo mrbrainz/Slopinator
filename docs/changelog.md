@@ -360,8 +360,8 @@ All notable changes to this project are documented here. Format is based on
   param set (`eq`/`monoBass`/`crossover`/`saturation`/
   `saturationAmount`/`target`/`ceiling`, not just target) and shows the
   matching preset's real name when it's an exact match, falling back to
-  the generic label only when the params have genuinely diverged from
-  every saved preset (#41)
+  a plain "Custom" label only when the params have genuinely diverged
+  from every saved preset (#41)
 
 ## [0.1.0] - 2026-07-25
 
