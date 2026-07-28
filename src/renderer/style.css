@@ -287,6 +287,12 @@ select{width:100%;}
   padding-top:16px;
   border-top:1px solid var(--line);
 }
+.build-footer{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;
+  opacity:.6;
+}
+.build-footer:not(:empty)::before{content:" · ";}
 
 .now-mastering{
   font-family:'Space Grotesk',sans-serif;

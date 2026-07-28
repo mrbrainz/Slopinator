@@ -164,6 +164,17 @@ All notable changes to this project are documented here. Format is based on
   currently has loaded); elapsed comes from the new
   `window.player.getCurrentTime()` during playback, and updates
   instantly on click too, alongside the existing bar highlighting (#35)
+- Build number in the footer (`Build #N (commit)`), so a running or
+  packaged app can be matched back to an exact commit instead of
+  guessing whether it's stale — several bug reports this project has had
+  turned out to be exactly that. `N` is `git rev-list --count HEAD`
+  (monotonically increasing, no counter file to maintain); `commit` is
+  the short hash, `+dirty` suffixed if there were uncommitted changes at
+  build time. New `scripts/generate-build-info.js` writes
+  `src/main/build-info.json` (gitignored, regenerated every run), run via
+  new `prestart`/updated `prepack`/`predist` hooks; `preload.js` reads it
+  directly (no IPC round trip needed) and exposes it as
+  `window.slopinator.buildInfo` (#38)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global

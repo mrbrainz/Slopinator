@@ -29,7 +29,6 @@ const CRINGE_COPY = [
   ['.meter-panel h4', 'VIBE METER'],
   ['#preset-save-btn', "save (it's fire)"],
   ['#export-run-btn', 'yeet to folder…'],
-  ['.caption', 'signal chain go brrr — what you see is what runs (no cap)'],
 ];
 
 function applyCringeCopy(on) {

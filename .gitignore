@@ -11,3 +11,4 @@ dist/
 build/
 .venv/
 *.spec
+src/main/build-info.json
