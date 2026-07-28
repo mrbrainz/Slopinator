@@ -50,7 +50,8 @@
     "publish": {
       "provider": "github",
       "owner": "mrbrainz",
-      "repo": "Slopinator"
+      "repo": "Slopinator",
+      "releaseType": "draft"
     },
     "directories": {
       "output": "dist",

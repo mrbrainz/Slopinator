@@ -13,6 +13,12 @@
 # since there's no Apple Developer ID certificate configured (see
 # docs/todos.md). Windows and Linux builds are unsigned; Windows users
 # will see a SmartScreen warning on first run.
+#
+# Publishes as a draft (build.publish.releaseType in package.json) —
+# never goes live on its own. The release-notes job fills the draft's
+# title/body from docs/changelog.md's [Unreleased] section (everything
+# since the last tag) once all three platform builds finish uploading;
+# review/trim/publish it by hand from the GitHub Releases tab.
 name: Release
 
 on:
@@ -20,6 +26,9 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   release:
@@ -56,3 +65,23 @@ jobs:
         run: npm run dist -- --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release-notes:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract changelog's [Unreleased] section
+        run: |
+          awk '/^## \[Unreleased\]/{flag=1; next} /^## \[/{flag=0} flag' docs/changelog.md > release-notes.md
+
+      - name: Set release title and notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release edit "${{ github.ref_name }}" \
+            --title "Slopinator ${{ github.ref_name }}" \
+            --notes-file release-notes.md \
+            --draft \
+            --repo "${{ github.repository }}"
