@@ -300,7 +300,12 @@ def main():
     # output (e.g. the Electron UI) instead of arriving in one final batch.
     # Plain -u/PYTHONUNBUFFERED doesn't reliably reach this when frozen by
     # PyInstaller, so it's set explicitly here.
-    sys.stdout.reconfigure(line_buffering=True)
+    # Also force UTF-8 with replacement on encode errors: Windows defaults
+    # stdout to the console's codepage (e.g. cp1252) even when piped, which
+    # can't encode arbitrary Unicode in a track's filename/path (crashed for
+    # real on a name containing U+2011 non-breaking hyphen).
+    sys.stdout.reconfigure(line_buffering=True, encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
     parser = argparse.ArgumentParser(
         description="Simple automated mastering chain.",

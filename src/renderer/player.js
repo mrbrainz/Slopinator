@@ -12,9 +12,19 @@ let currentPath = null;
 let currentOwner = null;
 
 function toFileUrl(filePath) {
+  // Windows paths use backslashes and a drive letter (C:\Users\...) — neither
+  // survives a POSIX-style file URL as-is. Normalize to forward slashes and
+  // add the leading slash a drive-letter path needs (file:///C:/Users/...);
+  // POSIX paths already start with one.
+  let p = filePath.replace(/\\/g, '/');
+  if (/^[A-Za-z]:\//.test(p)) p = '/' + p;
   // Encode each path segment (spaces, #, ? etc. would otherwise break the
-  // URL or get misparsed) while keeping the slashes that separate them.
-  return 'file://' + filePath.split('/').map(encodeURIComponent).join('/');
+  // URL or get misparsed) while keeping the slashes that separate them and
+  // leaving a drive-letter segment un-encoded — encodeURIComponent would
+  // turn ':' into '%3A', which Chromium won't resolve back to a drive path.
+  return 'file://' + p.split('/').map((seg, i) => (
+    i === 1 && /^[A-Za-z]:$/.test(seg) ? seg : encodeURIComponent(seg)
+  )).join('/');
 }
 
 function load(filePath, force = false) {
