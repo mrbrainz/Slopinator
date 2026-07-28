@@ -191,6 +191,14 @@ All notable changes to this project are documented here. Format is based on
   `package.json`), triggered by pushing a `v*` tag. New root
   `requirements.txt` for the workflow's Python setup. Windows/Linux
   builds are unsigned (no Authenticode cert — see `docs/todos.md`) (#42)
+- Release workflow now publishes as a draft (`releaseType: "draft"` in
+  `package.json`'s `build.publish`) rather than going live immediately,
+  and a new `release-notes` job (runs once, after all three platform
+  builds finish uploading) fills the draft's title
+  (`Slopinator <tag>`) and body from `docs/changelog.md`'s
+  `[Unreleased]` section via `gh release edit`, so it's ready to review
+  and publish by hand instead of starting from an empty description
+  (#43)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global
