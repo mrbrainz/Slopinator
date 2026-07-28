@@ -19,7 +19,7 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 .app-frame{
-  max-width:860px;
+  max-width:960px;
   margin:0 auto;
   padding:20px 20px 40px;
 }
@@ -340,10 +340,11 @@ select{width:100%;}
   background:var(--panel);
   border:1px solid var(--line);
   border-radius:10px;
-  min-width:112px;
-  padding:12px 10px;
+  flex:1 1 90px;
+  min-width:90px;
+  padding:10px 8px;
   position:relative;
-  margin-right:12px;
+  margin-right:8px;
   cursor:pointer;
   transition:border-color .15s;
 }
@@ -352,7 +353,7 @@ select{width:100%;}
 .module::after{
   content:"→";
   position:absolute;
-  right:-17px;
+  right:-12px;
   top:50%;
   transform:translateY(-50%);
   color:var(--line);
@@ -372,11 +373,17 @@ select{width:100%;}
   font-weight:600;
   font-size:12px;
   margin-bottom:3px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 .mod-val{
   font-family:'JetBrains Mono',monospace;
   font-size:10.5px;
   color:var(--muted);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 
 .mod-detail{
@@ -506,6 +513,14 @@ select{width:100%;}
   grid-template-columns:1fr 220px;
   gap:20px;
   align-items:start;
+}
+.chain-main{
+  /* Grid items default to min-width:auto, which refuses to shrink below
+     their content's intrinsic min size — with enough module tiles, that
+     blew out this 1fr column (and the whole page needed a horizontal
+     scrollbar) instead of just the rack itself scrolling internally via
+     .chain's own overflow-x:auto. */
+  min-width:0;
 }
 
 .meter-panel{

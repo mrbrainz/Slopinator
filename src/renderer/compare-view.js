@@ -15,6 +15,7 @@ const beforePeakEl = document.getElementById('compare-before-peak');
 const afterLufsEl = document.getElementById('compare-after-lufs');
 const afterPeakEl = document.getElementById('compare-after-peak');
 const afterBassEl = document.getElementById('compare-after-bass');
+const afterWidthEl = document.getElementById('compare-after-width');
 const waveBeforeEl = document.getElementById('compare-wave-before');
 const waveAfterEl = document.getElementById('compare-wave-after');
 const waveTimeBeforeEl = document.getElementById('compare-wave-time-before');
@@ -226,6 +227,9 @@ async function refreshCompare() {
 
   const monoBassUsed = track.previewParams && track.previewParams.monoBass;
   afterBassEl.textContent = monoBassUsed ? `mono below ${track.previewParams.crossover}Hz` : 'unlinked';
+
+  const widthUsed = track.previewParams && track.previewParams.width;
+  afterWidthEl.textContent = widthUsed ? `${Math.round(track.previewParams.widthAmount * 100)}%` : 'unchanged';
 
   const [before, after] = await Promise.all([
     renderCompareWave(waveBeforeEl, track.path),

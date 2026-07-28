@@ -47,6 +47,8 @@ const DEFAULT_EXPORT_PARAMS = {
   crossover: 80,
   saturation: true,
   saturationAmount: 0.08,
+  width: true,
+  widthAmount: 1.15,
   target: -8,
   ceiling: -0.3,
 };
@@ -106,7 +108,17 @@ function presetOptionLabel(preset) {
   return `${preset.name} (${preset.params.target} LUFS)`;
 }
 
-const PRESET_PARAM_KEYS = ['eq', 'monoBass', 'crossover', 'saturation', 'saturationAmount', 'target', 'ceiling'];
+const PRESET_PARAM_KEYS = [
+  'eq',
+  'monoBass',
+  'crossover',
+  'saturation',
+  'saturationAmount',
+  'width',
+  'widthAmount',
+  'target',
+  'ceiling',
+];
 
 function paramsMatch(a, b) {
   return PRESET_PARAM_KEYS.every((key) => a[key] === b[key]);

@@ -44,6 +44,8 @@ const params = {
   crossover: 120,
   saturation: true,
   saturationAmount: 0.05,
+  width: true,
+  widthAmount: 1.0,
   target: -14,
   ceiling: -1.0,
 };
@@ -174,6 +176,26 @@ const MODULES = [
       container.appendChild(
         bypassToggleRow(params.monoBass, (v) => {
           params.monoBass = v;
+          renderRack();
+        })
+      );
+    },
+  },
+  {
+    id: 'width',
+    name: 'Width',
+    enabled: () => params.width,
+    valueText: () => (params.width ? `${Math.round(params.widthAmount * 100)}% width` : 'bypassed'),
+    renderDetail: (container) => {
+      container.appendChild(
+        sliderRow('WIDTH', params.widthAmount, 0, 2, 0.01, (v) => `${Math.round(v * 100)}%`, (v) => {
+          params.widthAmount = v;
+          renderRack();
+        })
+      );
+      container.appendChild(
+        bypassToggleRow(params.width, (v) => {
+          params.width = v;
           renderRack();
         })
       );

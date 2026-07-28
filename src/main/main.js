@@ -41,7 +41,7 @@ if (app.isPackaged) {
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 980,
+    width: 1080,
     height: 720,
     icon: DEV_ICON_PATH,
     webPreferences: {
@@ -118,10 +118,12 @@ function buildMasterArgs(params = {}) {
   if (params.ceiling != null) args.push('--ceiling', String(params.ceiling));
   if (params.crossover != null) args.push('--crossover', String(params.crossover));
   if (params.saturationAmount != null) args.push('--saturation', String(params.saturationAmount));
+  if (params.widthAmount != null) args.push('--width', String(params.widthAmount));
   if (params.bitDepth) args.push('--bit-depth', params.bitDepth);
   if (params.eq === false) args.push('--no-eq');
   if (params.monoBass === false) args.push('--no-mono-bass');
   if (params.saturation === false) args.push('--no-saturation');
+  if (params.width === false) args.push('--no-width');
   return args;
 }
 

@@ -285,6 +285,26 @@ takes a `force` param to bypass the cache for exactly this case; any new
 code that plays back a preview/export path (not a stable, never-rewritten
 source file) needs to pass it.
 
+## Mastering chain module order (Stereo Width, PR #45)
+
+`master_file()`'s processing order is EQ → Mono bass → **Width** →
+Saturation → Loudness → Limiter — matches the module rack's left-to-
+right order in Chain view exactly, and that's deliberate, not
+incidental. Width sits *after* Mono bass on purpose: mono_bass forces
+everything below the crossover to mono for phase/system safety
+regardless of what ran before it, so processing width first would just
+get partially undone there for free — but running width *after* means
+it only ever touches content that's already safe to spread out, so a
+wide setting can never fight the mono-bass safety net. If a new module
+gets added to the rack, keep the rack's visual order and
+`master_file()`'s call order in lock-step — nothing enforces this
+automatically, it's just convention "what you see is what runs" (the
+app's own tagline) depends on.
+
+`stereo_width()` itself is plain mid/side math (no scipy.signal call
+needed), so unlike `mono_bass`/EQ it lives directly in `master.py`
+rather than needing anything from `dsp.py`.
+
 - Don't re-read files you've seen; use `Read` with offset/limit and `grep`, not
   whole-file dumps. Never paste large network logs.
 - Delegate bulk/mechanical edits to subagents; script mechanical transforms in

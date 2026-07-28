@@ -145,7 +145,20 @@ const DEFAULT_PRESETS = [
     // Platform loudness-normalizes (Spotify/Apple Music/YouTube ~-14 LUFS),
     // so headroom matters more than raw loudness — gentle drive, -1dBTP
     // ceiling to survive lossy transcodes without inter-sample clipping.
-    params: { eq: true, monoBass: true, crossover: 120, saturation: true, saturationAmount: 0.03, target: -14, ceiling: -1.0 },
+    // Width left unchanged (100%) — has to translate safely across every
+    // playback system a stream might land on, including mono/phone
+    // speakers, so no reason to push the stereo image further.
+    params: {
+      eq: true,
+      monoBass: true,
+      crossover: 120,
+      saturation: true,
+      saturationAmount: 0.03,
+      width: true,
+      widthAmount: 1.0,
+      target: -14,
+      ceiling: -1.0,
+    },
     savedAt: null,
   },
   {
@@ -153,7 +166,19 @@ const DEFAULT_PRESETS = [
     // SoundCloud applies little to no normalization, so tracks need to be
     // louder to compete, with a bit more drive for presence over laptop
     // speakers/earbuds while keeping a safe -1dBTP ceiling for its transcode.
-    params: { eq: true, monoBass: true, crossover: 100, saturation: true, saturationAmount: 0.05, target: -11, ceiling: -1.0 },
+    // Slightly wider (110%) — mostly a headphone/earbud listening context,
+    // where extra width reads as size rather than translation risk.
+    params: {
+      eq: true,
+      monoBass: true,
+      crossover: 100,
+      saturation: true,
+      saturationAmount: 0.05,
+      width: true,
+      widthAmount: 1.1,
+      target: -11,
+      ceiling: -1.0,
+    },
     savedAt: null,
   },
   {
@@ -161,14 +186,46 @@ const DEFAULT_PRESETS = [
     // Played on a system, not normalized or lossy-transcoded — pushed
     // loudest and hottest, tighter mono-bass crossover and more drive for
     // punch through a PA, narrower ceiling since there's no codec headroom
-    // to protect.
-    params: { eq: true, monoBass: true, crossover: 80, saturation: true, saturationAmount: 0.08, target: -8, ceiling: -0.3 },
+    // to protect. A bit more width (115%) for size on a big system —
+    // mono_bass already protects everything below the crossover, so this
+    // only ever widens content that's already safe to spread out.
+    params: {
+      eq: true,
+      monoBass: true,
+      crossover: 80,
+      saturation: true,
+      saturationAmount: 0.08,
+      width: true,
+      widthAmount: 1.15,
+      target: -8,
+      ceiling: -0.3,
+    },
     savedAt: null,
   },
 ];
 
 function presetsFilePath(userDataDir) {
   return path.join(userDataDir, 'presets.json');
+}
+
+// Presets saved before the Width module existed have no width/widthAmount
+// at all — rather than leaving that silently unset (functionally width=1.0,
+// but inconsistent to look at and to compare against in Export's preset
+// matching), backfill it once: the tuned value from the matching built-in
+// preset by name, or a neutral 100% for a custom user-named preset. Never
+// touches previewParams on already-mastered tracks — those are a record
+// of what was actually rendered to a real file, not a template to update.
+function withWidthDefault(preset) {
+  if (preset.params.width !== undefined && preset.params.widthAmount !== undefined) return preset;
+  const builtin = DEFAULT_PRESETS.find((p) => p.name === preset.name);
+  return {
+    ...preset,
+    params: {
+      ...preset.params,
+      width: builtin ? builtin.params.width : true,
+      widthAmount: builtin ? builtin.params.widthAmount : 1.0,
+    },
+  };
 }
 
 function loadPresets(userDataDir) {
@@ -178,7 +235,12 @@ function loadPresets(userDataDir) {
     return DEFAULT_PRESETS;
   }
   try {
-    return JSON.parse(fs.readFileSync(file, 'utf8'));
+    const saved = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const migrated = saved.map(withWidthDefault);
+    if (JSON.stringify(migrated) !== JSON.stringify(saved)) {
+      fs.writeFileSync(file, JSON.stringify(migrated, null, 2));
+    }
+    return migrated;
   } catch {
     return [];
   }

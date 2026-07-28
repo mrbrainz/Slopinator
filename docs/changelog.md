@@ -208,6 +208,27 @@ All notable changes to this project are documented here. Format is based on
   `dsp.py` against real scipy), and keeps `master.py`'s direct CLI
   usage as a secondary "advanced" section rather than the primary
   framing (#43)
+- New **Stereo Width** module in Chain view's rack, between Mono bass
+  and Saturation — a bypass toggle plus a 0–200% width slider (100% =
+  unchanged). `stereo_width()` in `master.py` does plain mid/side
+  processing (encode → scale the side channel → decode back); runs
+  after `mono_bass()` so widening only ever touches content that's
+  already safe to spread out, never fighting its below-crossover mono
+  safety. New `--width`/`--no-width` CLI flags,
+  `params.width`/`params.widthAmount` end to end (Chain view → IPC →
+  Export's per-track params/preset matching). All three built-in
+  presets updated: Streaming stays at 100% (needs to translate safely
+  across every playback system), Soundcloud and Club get a bit wider
+  (110%/115%) since headphones and a PA system both take extra size
+  well. `library.js`'s `loadPresets()` backfills width onto any
+  presets.json saved before this existed too (tuned value for a
+  built-in preset name, neutral 100% for a custom one) rather than
+  leaving it silently unset on already-existing installs — a one-time
+  migration, persisted back to disk, never touching already-mastered
+  tracks' own `previewParams` (a record of what was actually rendered,
+  not a template to retroactively rewrite). Compare screen gained a
+  "Stereo width" stat next to the existing "Stereo bass" one, showing
+  the mastered side's actual width setting (#45)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global
@@ -406,6 +427,18 @@ All notable changes to this project are documented here. Format is based on
   real tag straight from `package.json` (matching how electron-builder
   computes it) instead of trusting the git ref that triggered the
   workflow (#44)
+- Adding the Width module's rack tile (6 modules now, up from 5) made
+  Chain view need a horizontal scrollbar for the *whole page*, not just
+  the rack strip. `.chain` already had `overflow-x:auto` for exactly
+  this, but `.chain-main` (the rack's grid column in `.chain-layout`)
+  had no `min-width:0` — grid items default to `min-width:auto`, which
+  refuses to shrink below its content's intrinsic min size, so the
+  column blew out instead of clipping. Fixed the grid item, tightened
+  `.module` (112px min-width/12px margin → 90px/8px, now `flex:1 1
+  90px` so tiles fill any slack evenly instead of sitting at a fixed
+  size), and widened `.app-frame` (860px → 960px) and the window
+  (980px → 1080px) for real breathing room rather than a razor-thin
+  fit (#45)
 
 ## [0.1.0] - 2026-07-25
 
