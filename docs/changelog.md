@@ -11,6 +11,15 @@ All notable changes to this project are documented here. Format is based on
 ### Changed
 
 ### Fixed
+- v0.2.0's release notes went out as three empty headers, then (after a
+  manual rewrite) as a verbatim technical changelog dump — the
+  `release-notes` CI job hardcoded extracting `[Unreleased]`, which by
+  release time was the empty placeholder for *this* section, not what
+  had actually shipped. Now extracts the section matching the real
+  released version instead. Doesn't fix the deeper issue that the
+  extracted content is written for this file, not for a public release
+  — still needs a hand-written rewrite before publishing, see
+  `docs/context.md`'s gotcha for the actual style bar (#50)
 
 ## [0.2.0] - 2026-07-28
 

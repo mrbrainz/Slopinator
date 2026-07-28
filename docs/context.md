@@ -25,6 +25,34 @@ I want to create a fully fledged Electron app
 
 ## Known gotchas
 
+- **The auto-generated GitHub release body is a technical changelog
+  dump, not real release notes — don't ship it as-is.** v0.2.0's first
+  publish went out with the raw `docs/changelog.md` section verbatim
+  (backticks, file names, implementation rationale, PR numbers) until
+  the user rewrote it by hand into this, which is the actual bar:
+  ```
+  ### Added
+  - Width option
+
+  ### Changed
+  - Upgraded to latest Electron version
+
+  ### Fixed
+  - Windows build
+  ```
+  Short, plain language, one line per thing a user would actually
+  care about — no jargon, no "why", no file/function names. The
+  `release-notes` CI job (`.github/workflows/release.yml`) fills the
+  draft as a *starting point* only; when cutting a release, rewrite
+  the body by hand (`gh release edit <tag> --notes "..."`) to match
+  this style before it goes live, the same way `docs/changelog.md`
+  itself gets a real bullet per PR rather than being left to some
+  auto-summary. (Separately, that same first publish also came out
+  completely empty — three bare headers, no content at all — because
+  the extraction step still hardcoded grabbing `[Unreleased]`, which
+  by that point was the empty placeholder for the *next* release, not
+  what had just shipped. Fixed to extract the section matching the
+  actual released version instead.)
 - **v0.1.0 got tagged and published without ever cutting it in
   `changelog.md`** — the tag/CI/GitHub-release side of a release
   happened, but the "rename `[Unreleased]` to the new version" step
