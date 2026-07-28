@@ -371,9 +371,27 @@ async function selectChainInput(path, trackId = null) {
   chainTrackNameEl.textContent = path.split('/').pop();
   updateMeters(null, null);
 
-  inputMissing = (await window.slopinator.classifyPath(path)) === null;
+  const [missingKind, tracks] = await Promise.all([
+    window.slopinator.classifyPath(path),
+    trackId ? window.slopinator.libraryList() : Promise.resolve(null),
+  ]);
+  inputMissing = missingKind === null;
   // A track selected while we were checking may already be stale.
   if (inputPath !== path) return;
+
+  // Reopening a track that was already mastered here should pick up
+  // where it left off — both the settings that produced that result and
+  // the reading itself — instead of showing a blank meter next to
+  // whatever another track happened to leave dialed into the rack.
+  const track = trackId && tracks ? tracks.find((t) => t.id === trackId) : null;
+  if (track && track.previewParams) {
+    Object.assign(params, track.previewParams);
+    renderRack();
+    renderDetail();
+  }
+  if (track && track.previewLufs != null) {
+    updateMeters(track.previewLufs, track.previewTruePeakDb);
+  }
 
   chainTrackSubEl.classList.toggle('missing', inputMissing);
   if (inputMissing) {

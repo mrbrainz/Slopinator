@@ -286,6 +286,14 @@ All notable changes to this project are documented here. Format is based on
   playback — only Chain view's did. Both now track `window.player`'s
   `onTimeUpdate` against `originalPath`/`previewPath` the same way Chain
   view does against its own `inputPath` (#32)
+- Reopening an already-mastered track in Chain view (via the Library, or
+  switching to another track and back) always blanked the meter sidebar
+  and left whatever settings another track happened to leave dialed into
+  the rack, instead of restoring that track's own result.
+  `selectChainInput()` now looks the track up and, if it has
+  `previewParams`/`previewLufs`, restores both the rack and the meter
+  reading to what actually produced that track's last master, rather
+  than only doing this for the track open when the app launched (#34)
 
 ## [0.1.0] - 2026-07-25
 
