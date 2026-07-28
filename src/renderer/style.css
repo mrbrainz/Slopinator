@@ -312,6 +312,14 @@ select{width:100%;}
 .bar{flex:1 1 0;min-width:1px;background:var(--line);border-radius:1px;}
 .bar.played{background:var(--teal);}
 
+.wave-time{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;
+  color:var(--muted);
+  text-align:right;
+  margin-top:6px;
+}
+
 .chain-transport{margin:10px 0 20px;}
 
 .chain{

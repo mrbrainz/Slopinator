@@ -9,6 +9,7 @@ const masterBtn = document.getElementById('master-btn');
 const statusEl = document.getElementById('status');
 const logEl = document.getElementById('log');
 const waveformEl = document.getElementById('waveform');
+const waveTimeEl = document.getElementById('wave-time');
 const playBtn = document.getElementById('play-btn');
 const rackEl = document.getElementById('module-rack');
 const detailEl = document.getElementById('mod-detail');
@@ -20,6 +21,20 @@ let inputPath = null;
 let currentTrackId = null;
 let waveformBars = [];
 let inputMissing = false;
+let waveDurationSec = 0;
+
+function formatTime(sec) {
+  if (!isFinite(sec) || sec < 0) sec = 0;
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60)
+    .toString()
+    .padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+function updateWaveTime(currentSec) {
+  waveTimeEl.textContent = `${formatTime(currentSec)} / ${formatTime(waveDurationSec)}`;
+}
 
 const PRESETS = { streaming: -14, soundcloud: -11, club: -8 };
 
@@ -291,6 +306,7 @@ function updateMeters(lufs, truePeakDb) {
 async function loadWaveform(path) {
   waveformEl.innerHTML = '';
   waveformBars = [];
+  waveDurationSec = 0;
   playBtn.disabled = true;
   playBtn.textContent = '▶ Play';
 
@@ -303,7 +319,9 @@ async function loadWaveform(path) {
       waveformEl.appendChild(bar);
     });
     waveformBars = Array.from(waveformEl.children);
+    waveDurationSec = result.data.duration_sec;
   }
+  updateWaveTime(0);
 
   try {
     await window.player.load(path);
@@ -327,6 +345,7 @@ window.player.onTimeUpdate((fraction) => {
   if (window.player.getCurrentPath() !== inputPath) return;
   const playedCount = Math.floor(fraction * waveformBars.length);
   waveformBars.forEach((bar, i) => bar.classList.toggle('played', i < playedCount));
+  updateWaveTime(window.player.getCurrentTime());
 });
 
 window.player.onEnded(() => {
@@ -349,6 +368,7 @@ waveformEl.addEventListener('click', async (e) => {
   }
 
   window.player.seekToFraction(fraction);
+  updateWaveTime(fraction * waveDurationSec);
   const playedCount = Math.floor(fraction * waveformBars.length);
   waveformBars.forEach((bar, i) => bar.classList.toggle('played', i < playedCount));
 });
@@ -398,6 +418,8 @@ async function selectChainInput(path, trackId = null) {
     chainTrackSubEl.textContent = `File not found — it may have been moved or deleted: ${path}`;
     waveformEl.innerHTML = '';
     waveformBars = [];
+    waveDurationSec = 0;
+    updateWaveTime(0);
     playBtn.disabled = true;
     playBtn.textContent = '▶ Play';
   } else {
