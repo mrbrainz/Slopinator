@@ -45,6 +45,25 @@ I want to create a fully fledged Electron app
   display to actually open/inspect the window — a broken preload needs
   an actual visual check (or reading `preload.js` for anything beyond
   `require('electron')`), not just "the process didn't immediately die."
+- **`src/renderer/*.js` are plain classic `<script>` tags (no modules,
+  no bundler), so every top-level `function`/`const`/`let` in every one
+  of them shares a single global `window` scope.** Two files declaring
+  the same top-level function name silently collide — no error, the
+  later `<script>` tag in `index.html` just overwrites the earlier one's
+  definition. This happened for real: both `chain-view.js` and
+  `compare-view.js` independently added a `function updateWaveTime(...)`
+  helper for the waveform time counters (#35), with *different*
+  signatures (1 arg vs. 3). `compare-view.js` loads after `chain-view.js`
+  in `index.html`, so its 3-arg version silently won — every
+  `updateWaveTime(currentSec)` call from `chain-view.js` actually ran
+  `updateCompareWaveTime`'s body with only 1 of its 3 args, so
+  `el.textContent = ...` set a property on a bare number instead of a
+  DOM element. That's a silent no-op in a non-strict global script (no
+  thrown error), which is exactly why Chain view's counter stayed frozen
+  at its static HTML default with nothing in the console to find (#40).
+  Before adding a new top-level helper to any renderer file, check it
+  isn't already the name of something in a *different* renderer file —
+  grep across `src/renderer/*.js`, not just the one you're editing.
 - **macOS trashes Electron.app as "malware" after `npm install`.** This is
   Gatekeeper/AMFI rejecting the prebuilt Electron binary's missing/invalid
   code signature ("no CMS blob" / "Unrecoverable CT signature issue"), not

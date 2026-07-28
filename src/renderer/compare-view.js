@@ -31,7 +31,7 @@ let waveAfterBars = [];
 let beforeDurationSec = 0;
 let afterDurationSec = 0;
 
-function formatTime(sec) {
+function formatCompareTime(sec) {
   if (!isFinite(sec) || sec < 0) sec = 0;
   const m = Math.floor(sec / 60);
   const s = Math.floor(sec % 60)
@@ -40,8 +40,8 @@ function formatTime(sec) {
   return `${m}:${s}`;
 }
 
-function updateWaveTime(el, currentSec, durationSec) {
-  el.textContent = `${formatTime(currentSec)} / ${formatTime(durationSec)}`;
+function updateCompareWaveTime(el, currentSec, durationSec) {
+  el.textContent = `${formatCompareTime(currentSec)} / ${formatCompareTime(durationSec)}`;
 }
 
 async function renderCompareWave(container, path) {
@@ -125,13 +125,13 @@ function highlightPlayed(bars, fraction) {
 waveBeforeEl.addEventListener('click', (e) => {
   const fraction = waveformClickFraction(waveBeforeEl, e.clientX);
   highlightPlayed(waveBeforeBars, fraction);
-  updateWaveTime(waveTimeBeforeEl, fraction * beforeDurationSec, beforeDurationSec);
+  updateCompareWaveTime(waveTimeBeforeEl, fraction * beforeDurationSec, beforeDurationSec);
   seekTo(originalPath, fraction, listenBeforeBtn, 'original', 'compare-before');
 });
 waveAfterEl.addEventListener('click', (e) => {
   const fraction = waveformClickFraction(waveAfterEl, e.clientX);
   highlightPlayed(waveAfterBars, fraction);
-  updateWaveTime(waveTimeAfterEl, fraction * afterDurationSec, afterDurationSec);
+  updateCompareWaveTime(waveTimeAfterEl, fraction * afterDurationSec, afterDurationSec);
   seekTo(previewPath, fraction, listenAfterBtn, 'mastered', 'compare-after');
 });
 
@@ -149,10 +149,10 @@ window.player.onTimeUpdate((fraction) => {
   const current = window.player.getCurrentPath();
   if (owner === 'compare-before' && current === originalPath) {
     highlightPlayed(waveBeforeBars, fraction);
-    updateWaveTime(waveTimeBeforeEl, window.player.getCurrentTime(), beforeDurationSec);
+    updateCompareWaveTime(waveTimeBeforeEl, window.player.getCurrentTime(), beforeDurationSec);
   } else if (owner === 'compare-after' && current === previewPath) {
     highlightPlayed(waveAfterBars, fraction);
-    updateWaveTime(waveTimeAfterEl, window.player.getCurrentTime(), afterDurationSec);
+    updateCompareWaveTime(waveTimeAfterEl, window.player.getCurrentTime(), afterDurationSec);
   }
 });
 
@@ -235,8 +235,8 @@ async function refreshCompare() {
   waveAfterBars = after.bars;
   beforeDurationSec = before.duration;
   afterDurationSec = after.duration;
-  updateWaveTime(waveTimeBeforeEl, 0, beforeDurationSec);
-  updateWaveTime(waveTimeAfterEl, 0, afterDurationSec);
+  updateCompareWaveTime(waveTimeBeforeEl, 0, beforeDurationSec);
+  updateCompareWaveTime(waveTimeAfterEl, 0, afterDurationSec);
 }
 
 document.addEventListener('screen-activated', (e) => {
