@@ -352,6 +352,16 @@ All notable changes to this project are documented here. Format is based on
   to `formatChainTime`/`updateChainWaveTime` and
   `formatCompareTime`/`updateCompareWaveTime` so they can't collide
   (#40)
+- Export's per-row preset dropdown always said "Dialed in Chain view
+  (X LUFS)" for any track with `previewParams`, even one mastered from
+  an unchanged Streaming/Soundcloud/Club preset — same generic label
+  whether or not anything was actually tweaked. `renderPresetSelect()`
+  now deep-compares `previewParams` against every saved preset's full
+  param set (`eq`/`monoBass`/`crossover`/`saturation`/
+  `saturationAmount`/`target`/`ceiling`, not just target) and shows the
+  matching preset's real name when it's an exact match, falling back to
+  the generic label only when the params have genuinely diverged from
+  every saved preset (#41)
 
 ## [0.1.0] - 2026-07-25
 

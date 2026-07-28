@@ -106,15 +106,35 @@ function presetOptionLabel(preset) {
   return `${preset.name} (${preset.params.target} LUFS)`;
 }
 
+const PRESET_PARAM_KEYS = ['eq', 'monoBass', 'crossover', 'saturation', 'saturationAmount', 'target', 'ceiling'];
+
+function paramsMatch(a, b) {
+  return PRESET_PARAM_KEYS.every((key) => a[key] === b[key]);
+}
+
+// A track's previewParams matches a saved preset exactly when it was
+// mastered from that preset in Chain view without touching any slider
+// afterward — worth calling out by name instead of the generic "dialed
+// in" label, which reads like a deliberate custom tweak either way.
+function matchingPresetName(params, presets) {
+  const match = presets.find((preset) => paramsMatch(preset.params, params));
+  return match ? match.name : null;
+}
+
 function renderPresetSelect(track, presets) {
   const select = document.createElement('select');
   select.className = 'export-preset-select';
 
   const dialedIn = document.createElement('option');
   dialedIn.value = '';
-  dialedIn.textContent = track.previewParams
-    ? `Dialed in Chain view (${track.previewParams.target} LUFS)`
-    : `Default — ${presetOptionLabel(fallbackPreset(presets))}`;
+  if (track.previewParams) {
+    const matchedName = matchingPresetName(track.previewParams, presets);
+    dialedIn.textContent = matchedName
+      ? `${matchedName} (${track.previewParams.target} LUFS)`
+      : `Dialed in Chain view (${track.previewParams.target} LUFS)`;
+  } else {
+    dialedIn.textContent = `Default — ${presetOptionLabel(fallbackPreset(presets))}`;
+  }
   select.appendChild(dialedIn);
 
   presets.forEach((preset) => {
