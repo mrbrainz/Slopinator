@@ -301,6 +301,15 @@ All notable changes to this project are documented here. Format is based on
   `previewParams`/`previewLufs`, restores both the rack and the meter
   reading to what actually produced that track's last master, rather
   than only doing this for the track open when the app launched (#34)
+- Chain view's `inputPath` and Compare's `originalPath` are frequently
+  the exact same source file, so both screens' `window.player.onTimeUpdate`
+  handlers matched simultaneously — playing the original from Chain view
+  also drove Compare's "before" bar highlighting and time counter (#35),
+  and vice versa, even on the screen you weren't looking at. New
+  `window.player.setOwner()`/`getCurrentOwner()` tags which screen last
+  initiated playback/seek (`'chain'`/`'compare-before'`/`'compare-after'`);
+  each screen's progress handlers now gate on owner *and* path instead of
+  path alone (#36)
 
 ## [0.1.0] - 2026-07-25
 

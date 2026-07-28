@@ -4,6 +4,12 @@
 
 const audioEl = new Audio();
 let currentPath = null;
+// Which screen last initiated playback/seek on the shared element (e.g.
+// 'chain', 'compare-before', 'compare-after') — Chain view's inputPath and
+// Compare's originalPath are frequently the exact same file, so path
+// equality alone can't tell two screens' now-playing state apart; callers
+// use this to scope their own progress UI to actions *they* initiated.
+let currentOwner = null;
 
 function toFileUrl(filePath) {
   // Encode each path segment (spaces, #, ? etc. would otherwise break the
@@ -69,6 +75,14 @@ function getCurrentTime() {
   return audioEl.currentTime;
 }
 
+function setOwner(owner) {
+  currentOwner = owner;
+}
+
+function getCurrentOwner() {
+  return currentOwner;
+}
+
 // The audio element is a single shared singleton across views (Chain view,
 // Compare, ...) — callers should check this against the path they expect
 // to be playing before reacting to onTimeUpdate/onEnded, since another
@@ -102,4 +116,6 @@ window.player = {
   onEnded,
   getCurrentPath,
   getCurrentTime,
+  setOwner,
+  getCurrentOwner,
 };

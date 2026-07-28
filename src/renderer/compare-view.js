@@ -62,7 +62,8 @@ function resetListenButtons() {
   listenAfterBtn.textContent = '▶ Listen to mastered';
 }
 
-async function toggleListen(path, btn, label) {
+async function toggleListen(path, btn, label, owner) {
+  window.player.setOwner(owner);
   try {
     if (window.player.getCurrentPath() !== path) {
       resetListenButtons();
@@ -86,11 +87,12 @@ async function toggleListen(path, btn, label) {
       : `▶ Listen to ${label}`;
 }
 
-listenBeforeBtn.addEventListener('click', () => toggleListen(originalPath, listenBeforeBtn, 'original'));
-listenAfterBtn.addEventListener('click', () => toggleListen(previewPath, listenAfterBtn, 'mastered'));
+listenBeforeBtn.addEventListener('click', () => toggleListen(originalPath, listenBeforeBtn, 'original', 'compare-before'));
+listenAfterBtn.addEventListener('click', () => toggleListen(previewPath, listenAfterBtn, 'mastered', 'compare-after'));
 
-async function seekTo(path, fraction, btn, label) {
+async function seekTo(path, fraction, btn, label, owner) {
   if (!path) return;
+  window.player.setOwner(owner);
   try {
     if (window.player.getCurrentPath() !== path) {
       resetListenButtons();
@@ -124,13 +126,13 @@ waveBeforeEl.addEventListener('click', (e) => {
   const fraction = waveformClickFraction(waveBeforeEl, e.clientX);
   highlightPlayed(waveBeforeBars, fraction);
   updateWaveTime(waveTimeBeforeEl, fraction * beforeDurationSec, beforeDurationSec);
-  seekTo(originalPath, fraction, listenBeforeBtn, 'original');
+  seekTo(originalPath, fraction, listenBeforeBtn, 'original', 'compare-before');
 });
 waveAfterEl.addEventListener('click', (e) => {
   const fraction = waveformClickFraction(waveAfterEl, e.clientX);
   highlightPlayed(waveAfterBars, fraction);
   updateWaveTime(waveTimeAfterEl, fraction * afterDurationSec, afterDurationSec);
-  seekTo(previewPath, fraction, listenAfterBtn, 'mastered');
+  seekTo(previewPath, fraction, listenAfterBtn, 'mastered', 'compare-after');
 });
 
 window.player.onEnded(() => {
@@ -139,11 +141,16 @@ window.player.onEnded(() => {
 });
 
 window.player.onTimeUpdate((fraction) => {
+  // Chain view's inputPath and Compare's own originalPath are frequently
+  // the exact same source file — the owner check is what stops playback
+  // started from Chain view (or the other Compare side) from also
+  // driving this side's progress UI. See player.js's currentOwner comment.
+  const owner = window.player.getCurrentOwner();
   const current = window.player.getCurrentPath();
-  if (current === originalPath) {
+  if (owner === 'compare-before' && current === originalPath) {
     highlightPlayed(waveBeforeBars, fraction);
     updateWaveTime(waveTimeBeforeEl, window.player.getCurrentTime(), beforeDurationSec);
-  } else if (current === previewPath) {
+  } else if (owner === 'compare-after' && current === previewPath) {
     highlightPlayed(waveAfterBars, fraction);
     updateWaveTime(waveTimeAfterEl, window.player.getCurrentTime(), afterDurationSec);
   }
