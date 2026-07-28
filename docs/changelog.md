@@ -428,6 +428,16 @@ All notable changes to this project are documented here. Format is based on
   (e.g. a non-breaking hyphen), since stdout only had line-buffering
   reconfigured, not encoding. `sys.stdout`/`sys.stderr` now force
   `encoding="utf-8", errors="replace"` (#46)
+- Mastering any file crashed with `AttributeError: module 'math' has no
+  attribute 'fma'` on any Python older than 3.13 (`math.fma` was added in
+  3.13) — hit on a fresh Windows venv reported after #46 fixed the
+  playback/encoding bugs, but not actually Windows-specific: the frozen
+  `master-bin` picks up whatever Python built it, and this app never
+  pinned a minimum version anywhere. `dsp.py`'s `_zi_transient()` now
+  falls back to a plain multiply-add when `math.fma` isn't available;
+  the fallback double-rounds instead of single-rounding, differing at
+  the last bit or two, which is inaudible and still far inside the
+  bounded-transient's precision budget (#47)
 - The first real release run: `release-notes`'s `gh release edit
   "${{ github.ref_name }}"` failed with "release not found". Root
   cause: electron-builder names its GitHub release

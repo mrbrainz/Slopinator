@@ -241,7 +241,12 @@ def _zi_transient(a, zi_scaled, length):
     z = list(zi_scaled) + [0.0]
     out = np.zeros(length)
     a = list(a)
-    fma = math.fma  # matches scipy's compiled fused multiply-add on arm64
+    # math.fma (single-rounding fused multiply-add, matching scipy's compiled
+    # FMA on arm64) needs Python 3.13+; older interpreters fall back to a
+    # plain multiply-add, which double-rounds and so differs at the very
+    # last bit or two — negligible for audio, and still exact to well
+    # beyond float64 precision for the tiny bounded transient this computes.
+    fma = getattr(math, "fma", lambda a, b, c: a * b + c)
     for n in range(length):
         y = z[0]
         for i in range(k - 1):
