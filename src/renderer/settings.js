@@ -12,6 +12,7 @@ const settingsBtn = document.getElementById('settings-btn');
 const settingsMenu = document.getElementById('settings-menu');
 const modeNormalBtn = document.getElementById('mode-normal');
 const modeCringeBtn = document.getElementById('mode-cringe');
+const marqueeEl = document.getElementById('cringe-marquee');
 
 // Static labels swapped in cringe mode. Anything with dynamic text
 // (status lines, counts, track names, listen buttons) is left alone.
@@ -74,6 +75,12 @@ function applyMode(mode) {
   document.body.classList.toggle('cringe', cringe);
   applyCringeCopy(cringe);
   setConfetti(cringe);
+  // <marquee> only auto-scrolls once it's actually visible at layout
+  // time — it was display:none in normal mode, so switching to cringe
+  // via this toggle (rather than a fresh page load, where it's visible
+  // from the start) leaves it sitting frozen until start() is called
+  // explicitly.
+  if (cringe && marqueeEl.start) marqueeEl.start();
   modeNormalBtn.classList.toggle('on', !cringe);
   modeCringeBtn.classList.toggle('on', cringe);
   localStorage.setItem(MODE_KEY, cringe ? 'cringe' : 'normal');
