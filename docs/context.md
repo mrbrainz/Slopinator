@@ -305,6 +305,54 @@ app's own tagline) depends on.
 needed), so unlike `mono_bass`/EQ it lives directly in `master.py`
 rather than needing anything from `dsp.py`.
 
+## Cross-platform considerations (Windows playback + master.py crash, PR #46)
+
+Dev/CI happens mostly on macOS, so Windows-only bugs tend to ship silently
+until someone actually runs a Windows build. Two landed together in #46:
+
+- **Never build a `file://` URL by splitting a path on `/`.** Paths that
+  reach the renderer come from `main.js`/`library.js` via Node's
+  `path.join()`, which returns platform-native separators — backslashes on
+  Windows. `player.js`'s `toFileUrl()` split on `/` only, so a Windows path
+  never split at all and got `encodeURIComponent`'d as one opaque blob,
+  including the drive letter's `:` (`C:\Users\...` → `file://C%3A%5CUsers...`),
+  which Chromium can't resolve — playback silently did nothing. Fixed by
+  normalizing backslashes to `/` and adding the leading slash a drive-letter
+  path needs (`file:///C:/Users/...`) before splitting, while leaving the
+  drive-letter segment itself un-encoded (`encodeURIComponent` would turn
+  `:` into `%3A`). This is additive for POSIX paths — they already start
+  with `/` and never contain a backslash or a `X:` drive prefix, so the new
+  branches are no-ops on macOS and the output is byte-for-byte the same as
+  before.
+- **Don't assume stdout is UTF-8 just because line-buffering was already
+  reconfigured.** `master.py` explicitly line-buffers stdout (see the
+  PyInstaller gotcha above) but left the encoding at Python's default,
+  which on Windows is the console's codepage (e.g. cp1252) even when piped
+  to Electron — not UTF-8 like macOS/Linux almost always default to. Any
+  `print()` of a path/filename containing a character outside that
+  codepage (a non-breaking hyphen, in the reported crash) raised
+  `UnicodeEncodeError` and killed the whole mastering run. Fixed with
+  `sys.stdout.reconfigure(..., encoding="utf-8", errors="replace")` (and
+  the same for `sys.stderr`) — forcing UTF-8 explicitly is a no-op on
+  platforms that already default to it, so this doesn't change macOS/Linux
+  behavior at all.
+- **General rule going forward**: when a fix is Windows-specific, prefer
+  making the code handle both path styles / encodings unconditionally
+  (as above) over branching on `process.platform`/`sys.platform`. It's
+  usually less code, and it means there's only one code path to verify
+  instead of two — but if a real platform branch is ever unavoidable,
+  call out explicitly in the PR/changelog what was verified unchanged on
+  the other platform(s), the way both bullets above do.
+- Windows and macOS packaging already diverge in a few places worth
+  knowing about before touching build/runtime code: `main.js` picks
+  `master.exe` vs `master` by `process.platform` for the frozen binary
+  name; `.github/workflows/release.yml` builds on a `[macos-latest,
+  windows-latest, ubuntu-latest]` matrix, each producing its own
+  electron-builder output (Windows' portable `.exe` ships unsigned — see
+  the Windows code-signing to-do in `todos.md`); and the Gatekeeper
+  ad-hoc-signing gotchas above (`afterSign.js`, `xattr`/`codesign`) are
+  macOS-only — they don't run and aren't needed on the other two.
+
 - Don't re-read files you've seen; use `Read` with offset/limit and `grep`, not
   whole-file dumps. Never paste large network logs.
 - Delegate bulk/mechanical edits to subagents; script mechanical transforms in

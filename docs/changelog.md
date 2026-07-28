@@ -416,6 +416,18 @@ All notable changes to this project are documented here. Format is based on
   matching preset's real name when it's an exact match, falling back to
   a plain "Custom" label only when the params have genuinely diverged
   from every saved preset (#41)
+- Windows: nothing played when hitting play in Chain view/Compare —
+  `player.js`'s `toFileUrl()` split paths on `/` only, so a Windows path
+  (backslashes, drive letter) never split at all and got
+  `encodeURIComponent`'d as one opaque segment, including the drive
+  letter's `:`, producing a `file://` URL Chromium couldn't resolve. Now
+  normalizes backslashes to `/` first and leaves a drive-letter segment
+  un-encoded (#46)
+- Windows: `master.py` crashed with `UnicodeEncodeError` from `cp1252`
+  the moment a track's path contained a character outside that codepage
+  (e.g. a non-breaking hyphen), since stdout only had line-buffering
+  reconfigured, not encoding. `sys.stdout`/`sys.stderr` now force
+  `encoding="utf-8", errors="replace"` (#46)
 - The first real release run: `release-notes`'s `gh release edit
   "${{ github.ref_name }}"` failed with "release not found". Root
   cause: electron-builder names its GitHub release
