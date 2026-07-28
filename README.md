@@ -8,9 +8,10 @@ It's a fast way to get 90% of the way to a mastered track — not a
 replacement for critical listening on something important. Use it to
 get close quickly, then spot-check by ear.
 
-Built with Electron; the actual mastering chain is a small Python
-script (`master.py`) frozen into the app so nothing extra needs to be
-installed to use it.
+Under the hood, Slopinator is a bloated, slop-coded Electron wrapper 
+for a tiny Python script (`master.py`) frozen into the app so nothing 
+extra needs to be installed to use it. It was built for idiots, like me.
+A no-skill fat Millenial that forgot to cancel his Claude subscription.
 
 ## Getting the app
 
