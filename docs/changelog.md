@@ -208,6 +208,19 @@ All notable changes to this project are documented here. Format is based on
   `dsp.py` against real scipy), and keeps `master.py`'s direct CLI
   usage as a secondary "advanced" section rather than the primary
   framing (#43)
+- New **Stereo Width** module in Chain view's rack, between Mono bass
+  and Saturation — a bypass toggle plus a 0–200% width slider (100% =
+  unchanged). `stereo_width()` in `master.py` does plain mid/side
+  processing (encode → scale the side channel → decode back); runs
+  after `mono_bass()` so widening only ever touches content that's
+  already safe to spread out, never fighting its below-crossover mono
+  safety. New `--width`/`--no-width` CLI flags,
+  `params.width`/`params.widthAmount` end to end (Chain view → IPC →
+  Export's per-track params/preset matching). All three built-in
+  presets updated: Streaming stays at 100% (needs to translate safely
+  across every playback system), Soundcloud and Club get a bit wider
+  (110%/115%) since headphones and a PA system both take extra size
+  well (#45)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global

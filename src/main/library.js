@@ -145,7 +145,20 @@ const DEFAULT_PRESETS = [
     // Platform loudness-normalizes (Spotify/Apple Music/YouTube ~-14 LUFS),
     // so headroom matters more than raw loudness — gentle drive, -1dBTP
     // ceiling to survive lossy transcodes without inter-sample clipping.
-    params: { eq: true, monoBass: true, crossover: 120, saturation: true, saturationAmount: 0.03, target: -14, ceiling: -1.0 },
+    // Width left unchanged (100%) — has to translate safely across every
+    // playback system a stream might land on, including mono/phone
+    // speakers, so no reason to push the stereo image further.
+    params: {
+      eq: true,
+      monoBass: true,
+      crossover: 120,
+      saturation: true,
+      saturationAmount: 0.03,
+      width: true,
+      widthAmount: 1.0,
+      target: -14,
+      ceiling: -1.0,
+    },
     savedAt: null,
   },
   {
@@ -153,7 +166,19 @@ const DEFAULT_PRESETS = [
     // SoundCloud applies little to no normalization, so tracks need to be
     // louder to compete, with a bit more drive for presence over laptop
     // speakers/earbuds while keeping a safe -1dBTP ceiling for its transcode.
-    params: { eq: true, monoBass: true, crossover: 100, saturation: true, saturationAmount: 0.05, target: -11, ceiling: -1.0 },
+    // Slightly wider (110%) — mostly a headphone/earbud listening context,
+    // where extra width reads as size rather than translation risk.
+    params: {
+      eq: true,
+      monoBass: true,
+      crossover: 100,
+      saturation: true,
+      saturationAmount: 0.05,
+      width: true,
+      widthAmount: 1.1,
+      target: -11,
+      ceiling: -1.0,
+    },
     savedAt: null,
   },
   {
@@ -161,8 +186,20 @@ const DEFAULT_PRESETS = [
     // Played on a system, not normalized or lossy-transcoded — pushed
     // loudest and hottest, tighter mono-bass crossover and more drive for
     // punch through a PA, narrower ceiling since there's no codec headroom
-    // to protect.
-    params: { eq: true, monoBass: true, crossover: 80, saturation: true, saturationAmount: 0.08, target: -8, ceiling: -0.3 },
+    // to protect. A bit more width (115%) for size on a big system —
+    // mono_bass already protects everything below the crossover, so this
+    // only ever widens content that's already safe to spread out.
+    params: {
+      eq: true,
+      monoBass: true,
+      crossover: 80,
+      saturation: true,
+      saturationAmount: 0.08,
+      width: true,
+      widthAmount: 1.15,
+      target: -8,
+      ceiling: -0.3,
+    },
     savedAt: null,
   },
 ];

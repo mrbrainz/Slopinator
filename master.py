@@ -99,6 +99,20 @@ def mono_bass(data, sr, crossover=120):
     return low_mono + high
 
 
+def stereo_width(data, amount=1.0):
+    """Scale stereo width via mid/side processing. amount: 1 = unchanged
+    (default), 0 = fully mono, >1 = wider. Runs after mono_bass so
+    widening never undoes its below-crossover mono safety — only
+    2-channel audio has a meaningful stereo image to widen."""
+    if data.shape[1] != 2 or amount == 1.0:
+        return data
+    left = data[:, 0]
+    right = data[:, 1]
+    mid = (left + right) / 2
+    side = (left - right) / 2 * amount
+    return np.stack([mid + side, mid - side], axis=1)
+
+
 def saturate(data, amount=0.05):
     """Gentle tanh saturation for glue/warmth. amount: 0 = none."""
     if amount <= 0:
@@ -157,7 +171,8 @@ def loudness_normalize(data, sr, target_lufs):
 def master_file(in_path, out_path, target_lufs=-14.0, ceiling_db=-1.0,
                  crossover=120, low_mid_cut=-1.0, presence_cut=-0.5,
                  air_boost=0.5, saturation=0.05, bit_depth="PCM_16",
-                 skip_eq=False, skip_mono_bass=False, skip_saturation=False):
+                 skip_eq=False, skip_mono_bass=False, skip_saturation=False,
+                 width=1.0, skip_width=False):
     print(f"Loading {in_path} ...")
     data, sr = load_audio(in_path)
 
@@ -168,6 +183,10 @@ def master_file(in_path, out_path, target_lufs=-14.0, ceiling_db=-1.0,
     if not skip_mono_bass:
         print(f"Summing bass below {crossover}Hz to mono...")
         data = mono_bass(data, sr, crossover)
+
+    if not skip_width and width != 1.0:
+        print(f"Adjusting stereo width to {round(width * 100)}%...")
+        data = stereo_width(data, width)
 
     if not skip_saturation and saturation > 0:
         print("Applying gentle saturation...")
@@ -301,6 +320,9 @@ def main():
     parser.add_argument("--no-eq", action="store_true")
     parser.add_argument("--no-saturation", action="store_true")
     parser.add_argument("--saturation", type=float, default=0.05, help="Saturation amount 0-1 (default 0.05)")
+    parser.add_argument("--no-width", action="store_true")
+    parser.add_argument("--width", type=float, default=1.0,
+                         help="Stereo width multiplier: 1.0 = unchanged (default), 0 = mono, >1 = wider")
     parser.add_argument("--bit-depth", default="PCM_16", choices=["PCM_16", "PCM_24", "FLOAT"])
     parser.add_argument("--transcode", action="store_true",
                          help="Skip the mastering chain — just re-encode 'input' (already-mastered "
@@ -335,6 +357,7 @@ def main():
         skip_eq=args.no_eq, skip_mono_bass=args.no_mono_bass,
         skip_saturation=args.no_saturation, saturation=args.saturation,
         bit_depth=args.bit_depth,
+        skip_width=args.no_width, width=args.width,
     )
 
     if args.batch:
