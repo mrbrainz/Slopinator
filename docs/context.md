@@ -141,10 +141,14 @@ bytes went and what was done:
   untouchable without leaving Electron.
 - **54MB was Chromium locale packs** (55 × ~1.3MB `.lproj` inside
   `Electron Framework.framework`). `scripts/afterSign.js` deletes all but
-  `en.lproj` before signing. Note: the `electronLanguages` option in
-  `package.json` only prunes the *empty* `.lproj` stubs in the app's own
-  `Contents/Resources` — it never touches the framework's real packs,
-  which is why the manual prune exists.
+  `en.lproj` before signing — or did; as of electron-builder 26.x (the
+  Electron 43 upgrade), the `electronLanguages` option in `package.json`
+  now prunes the framework's real packs itself, so `afterSign.js`'s
+  manual prune runs 0 times in practice and is kept only as a defensive
+  no-op. Previously (electron-builder 24.x) `electronLanguages` only
+  pruned the *empty* `.lproj` stubs in the app's own `Contents/Resources`,
+  never the framework's real packs, which is why the manual step existed
+  at all.
 - **PyInstaller `master-bin`.** `freeze-python.js` passes `--optimize 2`
   (strips docstrings) and `--exclude-module ssl/_ssl/_hashlib` — proven
   unused by running all three modes (master run, `--analyze`, `--peaks`)

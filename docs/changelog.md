@@ -231,6 +231,22 @@ All notable changes to this project are documented here. Format is based on
   the mastered side's actual width setting (#45)
 
 ### Changed
+- Upgraded Electron `31.7.7` → `43.2.0` and `electron-builder` `24.13.3`
+  → `26.15.3` (12 major Electron versions — latest stable, prompted by
+  Windows testing surfacing how far behind it had drifted). Discovered
+  along the way: `electron-builder` 26.x's `electronLanguages` option
+  now actually prunes `Electron Framework.framework`'s real locale
+  packs itself (it didn't in 24.x, which is why
+  `scripts/afterSign.js`'s manual `pruneFrameworkLocales()` existed) —
+  it now runs 0 times in practice, kept only as a defensive no-op.
+  `npm audit` flags 16 high-severity issues, all transitive
+  dev-tooling dependencies inside `electron-builder` itself (glob/
+  brace-expansion, used only at build time, never shipped in the app)
+  — not addressed here, tracked as a separate follow-up. Verified
+  locally: dev launch, and a full `npm run dist` (mac) producing a
+  correctly signed, launchable `.app`/`.dmg`; Windows/Linux builds are
+  only verified by the next CI release run, same as every other
+  cross-platform change this project has made (#48)
 - README setup instructions now use a `.venv` instead of a global
   `pip install`, since Homebrew Python blocks global installs (#3)
 - `run-master`/`run-master-batch` IPC handlers take a full `params` object

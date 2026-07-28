@@ -8,12 +8,16 @@ const fs = require('fs');
 // after the whole build finishes, by which point the .dmg already has the
 // unsigned .app baked in.
 
-// The build config's electronLanguages only prunes the (empty) .lproj
-// stubs in the app's own Contents/Resources — the real locale packs
-// (~54MB, ~1.3MB x 55 languages of Chromium UI strings) live inside
-// Electron Framework.framework and electron-builder never touches them.
-// Prune them here, before we sign, so the signature seals the slimmed
-// bundle.
+// Historically (electron-builder 24.x / Electron 31.x), the build
+// config's electronLanguages only pruned the (empty) .lproj stubs in the
+// app's own Contents/Resources — the real locale packs (~54MB, ~1.3MB x
+// 55 languages of Chromium UI strings) lived inside
+// Electron Framework.framework and electron-builder never touched them,
+// so this function did the pruning manually before signing sealed the
+// bundle. As of electron-builder 26.x (with the Electron 43 upgrade),
+// electronLanguages now prunes the framework's real packs itself — this
+// runs 0 times in practice now, kept as a defensive no-op safety net in
+// case a future electron-builder version regresses that.
 const KEEP_LOCALES = new Set(['en.lproj']);
 
 function pruneFrameworkLocales(appPath) {
