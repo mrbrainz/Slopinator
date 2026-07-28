@@ -83,15 +83,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Extract changelog's [Unreleased] section
-        run: |
-          awk '/^## \[Unreleased\]/{flag=1; next} /^## \[/{flag=0} flag' docs/changelog.md > release-notes.md
-
       - name: Determine the release tag electron-builder actually used
         id: tag
         run: |
           version=$(grep -m1 '"version"' package.json | sed -E 's/.*"version": *"([^"]+)".*/\1/')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Extract changelog's section for this version
+        # Not [Unreleased] — once a release is actually cut (see
+        # docs/context.md's "Versioning" gotcha), [Unreleased] is the
+        # *empty* placeholder for the *next* release, and the just-shipped
+        # content lives under its own "## [x.y.z]" heading instead. This
+        # bit v0.2.0's first publish: the notes came out as three empty
+        # headers because this step still grabbed [Unreleased].
+        run: |
+          version="${{ steps.tag.outputs.version }}"
+          awk -v ver="$version" '
+            $0 ~ ("^## \\[" ver "\\]") {flag=1; next}
+            /^## \[/ {flag=0}
+            flag
+          ' docs/changelog.md > release-notes.md
 
       - name: Set release title and notes
         env:
