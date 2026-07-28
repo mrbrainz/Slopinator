@@ -41,7 +41,7 @@ if (app.isPackaged) {
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 980,
+    width: 1080,
     height: 720,
     icon: DEV_ICON_PATH,
     webPreferences: {

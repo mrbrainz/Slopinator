@@ -208,6 +208,26 @@ function presetsFilePath(userDataDir) {
   return path.join(userDataDir, 'presets.json');
 }
 
+// Presets saved before the Width module existed have no width/widthAmount
+// at all — rather than leaving that silently unset (functionally width=1.0,
+// but inconsistent to look at and to compare against in Export's preset
+// matching), backfill it once: the tuned value from the matching built-in
+// preset by name, or a neutral 100% for a custom user-named preset. Never
+// touches previewParams on already-mastered tracks — those are a record
+// of what was actually rendered to a real file, not a template to update.
+function withWidthDefault(preset) {
+  if (preset.params.width !== undefined && preset.params.widthAmount !== undefined) return preset;
+  const builtin = DEFAULT_PRESETS.find((p) => p.name === preset.name);
+  return {
+    ...preset,
+    params: {
+      ...preset.params,
+      width: builtin ? builtin.params.width : true,
+      widthAmount: builtin ? builtin.params.widthAmount : 1.0,
+    },
+  };
+}
+
 function loadPresets(userDataDir) {
   const file = presetsFilePath(userDataDir);
   if (!fs.existsSync(file)) {
@@ -215,7 +235,12 @@ function loadPresets(userDataDir) {
     return DEFAULT_PRESETS;
   }
   try {
-    return JSON.parse(fs.readFileSync(file, 'utf8'));
+    const saved = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const migrated = saved.map(withWidthDefault);
+    if (JSON.stringify(migrated) !== JSON.stringify(saved)) {
+      fs.writeFileSync(file, JSON.stringify(migrated, null, 2));
+    }
+    return migrated;
   } catch {
     return [];
   }
