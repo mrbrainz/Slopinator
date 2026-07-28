@@ -118,7 +118,7 @@ This produces a self-contained app — no system Python or venv required at
 runtime. Two hooks run automatically as part of `electron-builder`'s own
 build lifecycle (both fire for `pack` and `dist`):
 
-- `prepack`/`predist` (`scripts/freeze-python.sh`) freezes `master.py` and
+- `prepack`/`predist` (`scripts/freeze-python.js`) freezes `master.py` and
   its dependencies into a standalone binary with PyInstaller (installed into
   `.venv` on first use), bundled as the `master-bin` extra resource.
 - `afterSign` (`scripts/afterSign.js`, wired via the `build.afterSign` config

@@ -26,3 +26,6 @@ go here as numbered items.)
 2. Real code signing + notarization (requires an Apple Developer ID
    certificate — ad-hoc signing only satisfies Gatekeeper on this machine,
    not on a build handed to someone else).
+3. Windows code signing (requires an Authenticode certificate) — the
+   portable `.exe` from `.github/workflows/release.yml` is unsigned, so
+   it triggers a SmartScreen warning on first run.

@@ -32,6 +32,11 @@ function pruneFrameworkLocales(appPath) {
 }
 
 module.exports = async function afterSign(context) {
+  // Only macOS has a .app bundle to prune/sign here — electron-builder's
+  // afterSign hook can fire for Windows too (its own authenticode signing
+  // step), where none of this applies and appPath below wouldn't exist.
+  if (context.electronPlatformName !== 'darwin') return;
+
   const { appOutDir, packager } = context;
   const appPath = path.join(appOutDir, `${packager.appInfo.productFilename}.app`);
 

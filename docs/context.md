@@ -98,7 +98,7 @@ I want to create a fully fledged Electron app
   reliably reach a frozen binary's stdout — this broke the live progress log
   (#4) for packaged builds until fixed directly in `master.py`.
 - **electron-builder's default build-resources directory is `build/`, which
-  collides with `scripts/freeze-python.sh`'s PyInstaller output
+  collides with `scripts/freeze-python.js`'s PyInstaller output
   (`build/pyinstaller*`, gitignored).** App icons etc. go in `assets/`
   instead — `package.json`'s `build.directories.buildResources` is set to
   `"assets"` to match. Don't put build resources in `build/`; they'd
@@ -130,7 +130,7 @@ bytes went and what was done:
   `package.json` only prunes the *empty* `.lproj` stubs in the app's own
   `Contents/Resources` — it never touches the framework's real packs,
   which is why the manual prune exists.
-- **PyInstaller `master-bin`.** `freeze-python.sh` passes `--optimize 2`
+- **PyInstaller `master-bin`.** `freeze-python.js` passes `--optimize 2`
   (strips docstrings) and `--exclude-module ssl/_ssl/_hashlib` — proven
   unused by running all three modes (master run, `--analyze`, `--peaks`)
   and checking `sys.modules`; drops libcrypto+libssl (6MB). **Before
@@ -148,7 +148,7 @@ bytes went and what was done:
   functions `master.py` used (`butter`, `filtfilt`, `resample_poly`) plus
   `lfilter` (pyloudnorm calls this internally — see below), imported as
   `import dsp as signal` in `master.py`. **This still needs an explicit
-  `--exclude-module scipy` in `freeze-python.sh`** even with scipy fully
+  `--exclude-module scipy` in `freeze-python.js`** even with scipy fully
   unimported by our own code — PyInstaller decides what to bundle by
   *static* analysis of `import` statements in every module it collects,
   and pyloudnorm's `iirfilter.py` has `import scipy.signal` at module

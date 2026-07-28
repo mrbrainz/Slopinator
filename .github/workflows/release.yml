@@ -1,0 +1,58 @@
+# Builds Slopinator for macOS, Windows, and Linux and publishes all
+# three to the GitHub Releases tab. PyInstaller can't cross-compile —
+# master-bin has to be frozen natively on each OS — so this runs as a
+# matrix across GitHub's own macos/windows/ubuntu runners rather than
+# building everything from one machine. See docs/context.md's "App size"
+# section for what master-bin actually is and why it exists.
+#
+# Triggered by pushing a version tag (e.g. `git tag v0.1 && git push
+# origin v0.1`), or manually via the Actions tab (workflow_dispatch).
+#
+# macOS build is ad-hoc signed (scripts/afterSign.js) — satisfies
+# Gatekeeper on the machine that built it, not a machine it's copied to,
+# since there's no Apple Developer ID certificate configured (see
+# docs/todos.md). Windows and Linux builds are unsigned; Windows users
+# will see a SmartScreen warning on first run.
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Create Python venv and install build dependencies
+        shell: bash
+        run: |
+          python -m venv .venv
+          if [ -f .venv/Scripts/python.exe ]; then
+            .venv/Scripts/python.exe -m pip install --quiet -r requirements.txt
+          else
+            .venv/bin/python3 -m pip install --quiet -r requirements.txt
+          fi
+
+      - name: Build and publish
+        run: npm run dist -- --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

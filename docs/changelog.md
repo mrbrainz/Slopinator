@@ -175,6 +175,22 @@ All notable changes to this project are documented here. Format is based on
   new `prestart`/updated `prepack`/`predist` hooks; `preload.js` reads it
   directly (no IPC round trip needed) and exposes it as
   `window.slopinator.buildInfo` (#38)
+- Windows and Linux release targets: `build.win` (portable `.exe`) and
+  `build.linux` (`AppImage`) in `package.json`, alongside the existing
+  macOS `.dmg`. `scripts/freeze-python.sh` rewritten as
+  `scripts/freeze-python.js` — PyInstaller can't cross-compile, so
+  `master-bin` has to be frozen natively on each OS, and bash alone
+  doesn't know a venv's executables live in `.venv/bin` on macOS/Linux
+  but `.venv/Scripts` on Windows. `main.js` picks `master-bin/master.exe`
+  vs `master-bin/master` by `process.platform`.
+  `scripts/afterSign.js` now no-ops on non-macOS (`.app`-bundle pruning/
+  signing doesn't apply there, and electron-builder's `afterSign` hook
+  can fire for Windows too). New `.github/workflows/release.yml`
+  builds all three platforms in parallel on GitHub-hosted runners and
+  publishes to the GitHub Releases tab (`build.publish` in
+  `package.json`), triggered by pushing a `v*` tag. New root
+  `requirements.txt` for the workflow's Python setup. Windows/Linux
+  builds are unsigned (no Authenticode cert — see `docs/todos.md`) (#42)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global
