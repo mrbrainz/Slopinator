@@ -339,6 +339,19 @@ All notable changes to this project are documented here. Format is based on
   `get-build-info` IPC handler; `preload.js` now only calls
   `ipcRenderer.invoke('get-build-info')`, same pattern as everything else
   it exposes (#39)
+- Chain view's waveform time counter (#35) never actually updated —
+  frozen at its static `0:00 / 0:00` HTML default with no console
+  errors. Root cause: `chain-view.js` and `compare-view.js` are plain
+  `<script>` tags sharing one global scope, and both independently
+  declared a top-level `function updateWaveTime(...)` with different
+  signatures. `compare-view.js` loads after `chain-view.js` in
+  `index.html`, so its 3-arg version silently won the collision — every
+  1-arg call from `chain-view.js` ran the wrong function body, setting
+  `.textContent` on a bare number instead of a DOM element (a silent
+  no-op, not a thrown error). Renamed both files' now-duplicate helpers
+  to `formatChainTime`/`updateChainWaveTime` and
+  `formatCompareTime`/`updateCompareWaveTime` so they can't collide
+  (#40)
 
 ## [0.1.0] - 2026-07-25
 
