@@ -25,6 +25,24 @@ I want to create a fully fledged Electron app
 
 ## Known gotchas
 
+- **electron-builder's auto-generated Windows `.ico` (from a single
+  source PNG, no explicit `build.win.icon`) produced a corrupted
+  taskbar icon** — garbled/rainbow-noise render instead of the actual
+  artwork, discovered via real Windows testing. `assets/icon.png` is
+  782×782, an unusual size that likely tripped up whatever resampling
+  that auto-conversion does internally; electron-builder's `.icns`
+  generation for macOS from the same source was fine. Fixed by
+  building a proper multi-resolution `.ico` ourselves
+  (`scripts/build-ico.js`, packs pre-resized 16–256px PNGs into a
+  real ICO container — no new dependency, the format is simple enough
+  to write directly) and pointing `build.win.icon` at it explicitly
+  in `package.json`, bypassing electron-builder's auto-conversion
+  entirely. Verified by extracting the actual embedded icon resource
+  from a locally cross-built `.exe` (`pefile`, RT_ICON) and confirming
+  it decodes as a clean, correct PNG — not just that the build
+  succeeded. Re-run `scripts/build-ico.js` (see its header comment)
+  whenever `assets/icon.png` changes; nothing regenerates it
+  automatically.
 - **`preload.js` runs under Electron's sandboxed preload (default `true`
   since Electron 20; this app is on Electron 31 and never sets
   `sandbox: false`), which has no generic `require('fs')`/`require('path')`

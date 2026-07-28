@@ -477,6 +477,19 @@ All notable changes to this project are documented here. Format is based on
   size), and widened `.app-frame` (860px → 960px) and the window
   (980px → 1080px) for real breathing room rather than a razor-thin
   fit (#45)
+- Windows taskbar icon rendered as corrupted rainbow noise instead of
+  the actual artwork. electron-builder was auto-generating the `.ico`
+  from `assets/icon.png` (782×782, no explicit `build.win.icon`) at
+  build time, and that conversion produced garbage — macOS's `.icns`
+  generation from the same source was fine. New
+  `scripts/build-ico.js` packs pre-resized 16–256px PNGs into a proper
+  multi-resolution `.ico` directly (plain buffer-writing, no new
+  dependency — the ICO container format is simple enough), committed
+  as `assets/icon.ico` and wired in via `build.win.icon`, bypassing
+  electron-builder's auto-conversion entirely. Verified by extracting
+  the actual embedded icon resource from a locally cross-built `.exe`
+  and confirming it decodes as the real artwork, not just that the
+  build succeeded (#49)
 
 ## [0.1.0] - 2026-07-25
 

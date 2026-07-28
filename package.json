@@ -41,7 +41,8 @@
       "format": "ULFO"
     },
     "win": {
-      "target": "portable"
+      "target": "portable",
+      "icon": "assets/icon.ico"
     },
     "linux": {
       "target": ["AppImage"],
