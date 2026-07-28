@@ -199,6 +199,15 @@ All notable changes to this project are documented here. Format is based on
   `[Unreleased]` section via `gh release edit`, so it's ready to review
   and publish by hand instead of starting from an empty description
   (#43)
+- Rewrote `README.md` from scratch — it was still entirely about the
+  original `master.py` CLI script from before the Electron wrapper
+  existed, with no mention of the actual app's four tabs (Library/
+  Chain view/Compare/Export) at all. Now covers using the app itself
+  (screen by screen), a "For developers" section (dev setup, project
+  structure, building distributables, the release process, testing
+  `dsp.py` against real scipy), and keeps `master.py`'s direct CLI
+  usage as a secondary "advanced" section rather than the primary
+  framing (#43)
 
 ### Changed
 - README setup instructions now use a `.venv` instead of a global
