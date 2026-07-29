@@ -1,4 +1,4 @@
-# Slopinator
+![Slopinator — Mastering Tool](assets/banner.png)
 
 A desktop app for fast, consistent first-pass audio mastering. Import
 tracks, dial in a chain (or just pick a preset), preview it, A/B it
