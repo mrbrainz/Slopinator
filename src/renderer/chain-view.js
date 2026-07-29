@@ -488,6 +488,24 @@ window.getCurrentChainTrack = () => ({ trackId: currentTrackId, path: inputPath 
 
 // --- mastering ---
 
+// Python's default warnings.warn() format is "<file>:<lineno>: <Category>
+// Warning: <message>" on stderr (e.g. pyloudnorm's "Possible clipped
+// samples in output." during loudness normalize) — not a stage of the
+// chain, just noise the overlay shouldn't surface.
+function isWarningLine(line) {
+  return /:\d+:\s*\w*Warning:/.test(line);
+}
+
+// master.py prints the real on-disk path when writing Chain view's
+// preview (e.g. "Writing /Users/…/Application Support/Slopinator/
+// previews/<uuid>.flac (PCM_16)...") — accurate, but not something a
+// user needs to see; the debug console (off by default, see settings.js)
+// still shows the raw line for anyone who does.
+function friendlyStageText(line) {
+  if (/^Writing .+\.\w+ \(.+\)\.\.\.$/.test(line)) return 'Writing mastered FLAC to local cache';
+  return line;
+}
+
 // master.py's own top-level print()s (see master.py's master_file()) are
 // the stage headers — e.g. "Applying corrective EQ...", "Limiting to
 // -0.3 dBTP true peak ceiling...". Its one sub-detail line ("  measured
@@ -496,8 +514,10 @@ window.getCurrentChainTrack = () => ({ trackId: currentTrackId, path: inputPath 
 function latestStageLine(text) {
   const lines = text.split('\n');
   for (let i = lines.length - 1; i >= 0; i--) {
-    const line = lines[i].trim();
-    if (line && !lines[i].startsWith(' ')) return line;
+    const raw = lines[i];
+    const line = raw.trim();
+    if (!line || raw.startsWith(' ') || isWarningLine(line)) continue;
+    return friendlyStageText(line);
   }
   return null;
 }
