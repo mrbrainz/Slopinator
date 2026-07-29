@@ -7,6 +7,12 @@ All notable changes to this project are documented here. Format is based on
 ## [Unreleased]
 
 ### Added
+- A successful master run now switches straight to the Compare tab
+  (previously stayed on Chain view, requiring a manual tab click to hear
+  the result). Only happens for the track actually being viewed when the
+  run finishes, and after its result is persisted to the library — so
+  Compare's own refresh (triggered by the tab switch) never renders the
+  track's pre-run preview data for a moment (#60)
 - Chain view silently auto-loads the top-of-list Library track when
   nothing's loaded yet (app startup, or right after the loaded track was
   just removed) — new `window.selectChainInput()` (non-navigating variant
@@ -15,6 +21,22 @@ All notable changes to this project are documented here. Format is based on
   explicit row click does that (#59)
 
 ### Changed
+- **The limiter stage was ~35x slower than it needed to be** — `true_peak_limiter()`'s
+  gain-reduction computation used two per-sample Python loops (a lookahead
+  max-filter and a release-envelope smoother) over the *oversampled*
+  signal (4x the track's real sample count, since #51's true-peak fix),
+  which is what made "Limiting to…" by far the slowest stage of a run —
+  17s for just a 1-minute clip that actually needed limiting, scaling
+  worse for longer/hotter tracks. Both loops are now closed-form
+  vectorized numpy (no Python-level per-sample loop at all): the lookahead
+  max filter via a block-decomposition prefix/suffix-max trick, the
+  release smoother by recognizing its recurrence is exactly a running
+  minimum once you subtract off its linear ramp
+  (`np.minimum.accumulate`). Verified bit-for-bit (float64 rounding only)
+  against the old loop-based implementation across five signal types
+  (loud sine, no-limiting-needed quiet signal, random noise transients,
+  silence, sparse near-full-scale pulses); the same 1-minute clip now
+  takes ~0.5s (#60)
 - Library list now shows newest-imported tracks at the top instead of the
   bottom — `library.js`'s `addTrack()` pushes to the end of the array, so
   `refreshLibrary()` now sorts by `addedAt` descending for display rather
