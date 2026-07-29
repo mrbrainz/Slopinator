@@ -7,6 +7,13 @@ All notable changes to this project are documented here. Format is based on
 ## [Unreleased]
 
 ### Added
+- Library screen shows a skeleton row (spinning throbbers, filename only)
+  for each track while it's being imported and analyzed, instead of a
+  blanket "Importing…" header with no per-track feedback. `library-import`
+  now streams a `library-import-progress` event to the renderer after
+  each file is added and again after it's analyzed, so a track's skeleton
+  flips to real data as soon as that file is ready — not after the whole
+  batch finishes (#54)
 - Band-split saturation: the Saturation module's `saturate()` now only
   applies tanh drive to content above a crossover frequency (new
   "CROSSOVER" slider in Chain view, `--saturation-crossover` CLI flag,
@@ -43,6 +50,13 @@ All notable changes to this project are documented here. Format is based on
   final export — see "Preview vs export" in `docs/context.md`) (#53)
 
 ### Fixed
+- Drag-and-drop onto the Library screen's drop zone silently stopped
+  working (drop event fired, but nothing imported) since the Electron
+  31 → 43 upgrade (#48) — Electron 32 removed `File.path`, the
+  non-standard property the drop handler relied on to get a real
+  filesystem path out of a dropped `DataTransfer`. Replaced with
+  `webUtils.getPathForFile()`, callable only from preload/main, exposed
+  to the renderer as `window.slopinator.getPathForFile()` (#54)
 - `true_peak_limiter()` computed its gain-reduction curve from original-rate
   sample peaks, even though the initial over/no-over check correctly used
   the oversampled (inter-sample-aware) signal — so a track could trip the

@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('slopinator', {
   version: process.env.npm_package_version,
@@ -28,9 +28,19 @@ contextBridge.exposeInMainWorld('slopinator', {
   presetsSave: (name, params) => ipcRenderer.invoke('presets-save', { name, params }),
   presetsDelete: (name) => ipcRenderer.invoke('presets-delete', name),
   libraryImport: (paths) => ipcRenderer.invoke('library-import', paths),
+  // Electron 32+ stopped patching a real filesystem path onto dropped
+  // File objects (the old, now-removed File.path) — this is the
+  // replacement, only callable from preload/main, never the renderer
+  // directly. See docs/context.md's Electron 43 upgrade gotcha.
+  getPathForFile: (file) => webUtils.getPathForFile(file),
   onMasterLog: (callback) => {
     const listener = (_event, payload) => callback(payload);
     ipcRenderer.on('master-log', listener);
     return () => ipcRenderer.removeListener('master-log', listener);
+  },
+  onLibraryImportProgress: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on('library-import-progress', listener);
+    return () => ipcRenderer.removeListener('library-import-progress', listener);
   },
 });

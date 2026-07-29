@@ -282,12 +282,21 @@ ipcMain.handle('pick-import-files', async () => {
   return result.canceled ? [] : result.filePaths;
 });
 
-ipcMain.handle('library-import', async (_event, paths) => {
+ipcMain.handle('library-import', async (event, paths) => {
   const dir = userDataDir();
   let tracks = library.loadLibrary(dir);
+  const sender = event.sender;
+  // Streamed per-file so the renderer can flip each track's own skeleton
+  // row to real data as soon as it's ready, instead of waiting for the
+  // whole batch — same pattern as master-log's live progress streaming.
+  const sendProgress = (filePath, track) => {
+    if (!sender.isDestroyed()) sender.send('library-import-progress', { path: filePath, track });
+  };
 
   for (const filePath of expandAudioPaths(paths)) {
     tracks = library.addTrack(dir, filePath);
+    const added = tracks.find((t) => t.path === filePath);
+    if (added) sendProgress(filePath, added);
   }
 
   for (const track of tracks.filter((t) => t.status === 'raw')) {
@@ -303,6 +312,8 @@ ipcMain.handle('library-import', async (_event, paths) => {
       truePeakDb: true_peak_db,
       status: 'needs_mastering',
     });
+    const updated = tracks.find((t) => t.id === track.id);
+    sendProgress(track.path, updated);
   }
 
   return tracks;
