@@ -115,6 +115,12 @@ function renderRow(track, missing) {
     e.stopPropagation();
     if (!confirm(`Remove "${track.name}" from your library? This won't delete the original file.`)) return;
     await window.slopinator.libraryRemove(track.id);
+    // Removing a track deletes its library entry (and preview file), but
+    // the source audio on disk is untouched — so Chain view's own
+    // missing-file check (classifyPath) would find it fine and keep
+    // showing its now-stale mastered details with no idea the library
+    // entry is gone. Tell it directly.
+    document.dispatchEvent(new CustomEvent('track-removed', { detail: { id: track.id } }));
     await refreshLibrary();
   });
 
@@ -138,8 +144,17 @@ async function refreshLibrary() {
   const tracks = await window.slopinator.libraryList();
   const missingFlags = await Promise.all(tracks.map((t) => window.slopinator.classifyPath(t.path).then((kind) => kind === null)));
 
+  // library.js's addTrack() pushes to the end, so `tracks` comes back
+  // oldest-first — sort newest-first for display, so a new import lands
+  // at the top instead of the bottom. Stable sort (spec'd since ES2019,
+  // which every V8 this app ships on satisfies) means two tracks added
+  // in the exact same millisecond keep their original relative (drop)
+  // order rather than an arbitrary one.
+  const rows = tracks.map((track, i) => ({ track, missing: missingFlags[i] }));
+  rows.sort((a, b) => new Date(b.track.addedAt) - new Date(a.track.addedAt));
+
   libraryListEl.innerHTML = '';
-  tracks.forEach((track, i) => libraryListEl.appendChild(renderRow(track, missingFlags[i])));
+  rows.forEach(({ track, missing }) => libraryListEl.appendChild(renderRow(track, missing)));
 
   const needsCount = tracks.filter((t) => t.status === 'needs_mastering').length;
   const missingCount = missingFlags.filter(Boolean).length;
@@ -147,6 +162,16 @@ async function refreshLibrary() {
     `${tracks.length} track${tracks.length === 1 ? '' : 's'}` +
     (needsCount ? ` · ${needsCount} need${needsCount === 1 ? 's' : ''} mastering` : '') +
     (missingCount ? ` · ${missingCount} missing` : '');
+
+  // Chain view starts empty until a track is picked — if nothing's loaded
+  // there yet (including right after the currently-loaded track was just
+  // removed, see the 'track-removed' listener in chain-view.js), silently
+  // load the top-of-list track into it so it's not sitting blank the
+  // first time the user switches over. Doesn't switch tabs — only an
+  // explicit Library row click (selectChainInputAndNavigate) does that.
+  if (rows.length && window.getCurrentChainTrack && window.selectChainInput && !window.getCurrentChainTrack().trackId) {
+    window.selectChainInput(rows[0].track.path, rows[0].track.id);
+  }
 }
 
 // path -> its skeleton row element, for the current in-flight import only.

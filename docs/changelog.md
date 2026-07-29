@@ -6,7 +6,19 @@ All notable changes to this project are documented here. Format is based on
 
 ## [Unreleased]
 
+### Added
+- Chain view silently auto-loads the top-of-list Library track when
+  nothing's loaded yet (app startup, or right after the loaded track was
+  just removed) — new `window.selectChainInput()` (non-navigating variant
+  of the existing `selectChainInputAndNavigate`), called from
+  `library-view.js`'s `refreshLibrary()`. Doesn't switch tabs — only an
+  explicit row click does that (#59)
+
 ### Changed
+- Library list now shows newest-imported tracks at the top instead of the
+  bottom — `library.js`'s `addTrack()` pushes to the end of the array, so
+  `refreshLibrary()` now sorts by `addedAt` descending for display rather
+  than rendering the raw storage order (#59)
 - Mastering overlay's stage text (#56) no longer surfaces Python
   `UserWarning`s (e.g. pyloudnorm's "Possible clipped samples in output."
   during loudness normalize) — those land on stderr same as every other
@@ -72,6 +84,15 @@ All notable changes to this project are documented here. Format is based on
   final export — see "Preview vs export" in `docs/context.md`) (#53)
 
 ### Fixed
+- Removing a track from the Library while it was the one loaded in Chain
+  view left it showing there anyway, mastered details and all — removal
+  only deletes the library entry (and its preview file), not the source
+  audio on disk, so Chain view's existing missing-file check
+  (`classifyPath`) found the real file just fine and had no way to know
+  its backing library entry was gone. `library-view.js`'s remove handler
+  now dispatches a `track-removed` event; Chain view resets to its empty
+  "No track selected" state if the removed track is the one it's
+  currently showing (#59)
 - Compare screen's shared `<audio>` element always restarted from 0 when
   switching between the "Listen to original" and "Listen to mastered"
   buttons (or back), even if you'd already listened partway through one
