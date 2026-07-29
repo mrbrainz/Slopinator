@@ -7,12 +7,15 @@
 // localStorage.
 
 const MODE_KEY = 'slopinator-ui-mode';
+const DEBUG_CONSOLE_KEY = 'slopinator-show-debug-console';
 
 const settingsBtn = document.getElementById('settings-btn');
 const settingsMenu = document.getElementById('settings-menu');
 const modeNormalBtn = document.getElementById('mode-normal');
 const modeCringeBtn = document.getElementById('mode-cringe');
 const marqueeEl = document.getElementById('cringe-marquee');
+const debugOffBtn = document.getElementById('debug-off');
+const debugOnBtn = document.getElementById('debug-on');
 
 // Static labels swapped in cringe mode. Anything with dynamic text
 // (status lines, counts, track names, listen buttons) is left alone.
@@ -97,4 +100,20 @@ document.addEventListener('click', () => {
 modeNormalBtn.addEventListener('click', () => applyMode('normal'));
 modeCringeBtn.addEventListener('click', () => applyMode('cringe'));
 
+// Debug console (Chain view's raw master.py stdout/stderr log): off by
+// default — it's implementation detail, not something most users need to
+// see, and now that mastering shows its own stage-by-stage overlay there's
+// a friendlier way to know what's happening. Kept around behind this
+// toggle for anyone debugging a failed/odd run.
+function applyDebugConsole(show) {
+  document.body.classList.toggle('show-debug-console', show);
+  debugOffBtn.classList.toggle('on', !show);
+  debugOnBtn.classList.toggle('on', show);
+  localStorage.setItem(DEBUG_CONSOLE_KEY, show ? 'on' : 'off');
+}
+
+debugOffBtn.addEventListener('click', () => applyDebugConsole(false));
+debugOnBtn.addEventListener('click', () => applyDebugConsole(true));
+
 applyMode(localStorage.getItem(MODE_KEY) === 'cringe' ? 'cringe' : 'normal');
+applyDebugConsole(localStorage.getItem(DEBUG_CONSOLE_KEY) === 'on');
