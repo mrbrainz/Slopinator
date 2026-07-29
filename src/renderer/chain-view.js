@@ -479,10 +479,42 @@ async function selectChainInput(path, trackId = null) {
   updateMasterButton();
 }
 
+// Removing a track from the Library deletes its library entry, not the
+// source file on disk — classifyPath()'s missing-file check above would
+// still find the file fine and keep showing its now-stale mastered
+// details with no idea the library entry backing it is gone. Reset to
+// the same empty state a fresh launch starts in.
+function clearChainSelection() {
+  inputPath = null;
+  currentTrackId = null;
+  inputMissing = false;
+  chainTrackNameEl.textContent = 'No track selected';
+  chainTrackSubEl.textContent = 'Pick a track from your Library.';
+  chainTrackSubEl.classList.remove('missing');
+  waveformEl.innerHTML = '';
+  waveformBars = [];
+  waveDurationSec = 0;
+  updateChainWaveTime(0);
+  playBtn.disabled = true;
+  playBtn.textContent = '▶ Play';
+  updateMeters(null, null);
+  updateMasterButton();
+}
+
+document.addEventListener('track-removed', (e) => {
+  if (e.detail.id === currentTrackId) clearChainSelection();
+});
+
 window.selectChainInputAndNavigate = (path, trackId) => {
   selectChainInput(path, trackId);
   activateTab('chain');
 };
+
+// Non-navigating variant of the above — used by library-view.js to
+// silently auto-load the top-of-list track when nothing's loaded yet
+// (e.g. on startup, or right after clearChainSelection() above), without
+// yanking the user over to the Chain tab the way a real row click does.
+window.selectChainInput = selectChainInput;
 
 window.getCurrentChainTrack = () => ({ trackId: currentTrackId, path: inputPath });
 
