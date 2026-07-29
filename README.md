@@ -29,13 +29,17 @@ The app has four tabs, meant to be used roughly in order:
 
 ### 1. Library
 
-Your track list. Drag files in (or "+ Import tracks") — WAV, AIFF, and
-FLAC are supported. Each row shows its measured loudness/true peak
-once analyzed, and a status: raw import, needs mastering, or mastered.
-A row whose source file has been moved or deleted since it was
-imported is flagged clearly rather than silently failing later. Click
-a row to open it in Chain view; the ✕ button removes it from the
-library (the original file on disk is untouched).
+Your track list, newest imports at the top. Drag files in (or "+
+Import tracks") — WAV, AIFF, and FLAC are supported; each dropped/added
+track shows a skeleton row while it's being imported and analyzed.
+Each row shows its measured loudness/true peak once analyzed, and a
+status: raw import, needs mastering, or mastered. A row whose source
+file has been moved or deleted since it was imported is flagged
+clearly rather than silently failing later. Click a row to open it in
+Chain view (whichever track is currently loaded there is highlighted);
+the ✕ button removes it from the library (the original file on disk
+is untouched). Chain view auto-loads the top track the first time you
+open it, so it's never sitting empty.
 
 ### 2. Chain view
 
@@ -49,22 +53,29 @@ module:
 
 - **EQ** — mild corrective cuts/lift, on by default
 - **Mono bass** — sums bass below a crossover frequency to mono (club/vinyl safety)
-- **Saturation** — light warmth/glue, adjustable drive
+- **Width** — stereo widening via mid/side processing, 0–200%
+- **Saturation** — light warmth/glue, adjustable drive; band-split by
+  default (only content above a crossover, 630Hz by default, gets
+  drive — keeps the added harmonics off the low end)
 - **Loudness** — target integrated LUFS
 - **Limiter** — true-peak ceiling
 
-Each module has a bypass toggle. Hit **Master** to render a preview —
-this doesn't ask where to save; it renders to an app-managed slot so
-you can audition it in Compare and re-render as many times as you like
-without piling up files. A real, user-chosen destination file only
-gets written from the Export tab.
+Each module has a bypass toggle. Hit **Render Master Preview** to
+render — this doesn't ask where to save; it renders to an app-managed
+slot so you can audition it in Compare and re-render as many times as
+you like without piling up files. The whole app locks behind a
+full-screen overlay while a render is in progress, showing which stage
+is currently running. A real, user-chosen destination file only gets
+written from the Export tab.
 
 ### 3. Compare
 
+A successful render in Chain view drops you here automatically.
 Before/after: the original track and the rendered preview, side by
-side, with independent waveforms, playback, and loudness/true-peak
-stats. Listen to both, and if it's not right, "Adjust chain" sends you
-back to Chain view.
+side, with independent waveforms, playback, and loudness/true-peak/
+width/saturation stats — each side remembers its own playback position
+when you switch between them. Listen to both, and if it's not right,
+"Adjust chain" sends you back to Chain view.
 
 ### 4. Export
 
@@ -80,8 +91,11 @@ held 24-bit precision.
 
 ### Settings
 
-The gear icon in the titlebar has one real setting (UI mode) — Normal
-or Cringe. Cringe mode is a purely cosmetic easter egg; try it.
+The gear icon in the titlebar has two settings: UI mode — Normal or
+Cringe (a purely cosmetic easter egg; try it) — and Debug console (off
+by default), which surfaces `master.py`'s raw stdout/stderr log in
+Chain view for debugging a failed or odd run, instead of relying on
+the friendlier stage-by-stage overlay alone.
 
 ## Under the hood: the mastering chain
 
@@ -92,13 +106,20 @@ flags on `master.py`, run in this order:
    2–5kHz (harshness), gentle lift above 10kHz (air). Not a substitute
    for fixing problems in the mix.
 2. **Mono bass** — sums content below the crossover to mono.
-3. **Saturation** — light tanh-based warmth, subtle by default.
-4. **Loudness normalization** — hits your integrated LUFS target via
+3. **Stereo width** — mid/side widening, runs after mono bass so it
+   never fights that safety net (only ever widens content that's
+   already safe to spread out).
+4. **Saturation** — light tanh-based warmth, subtle by default;
+   band-split above a crossover (630Hz by default) so it doesn't drive
+   on the bass, which usually has the most amplitude in a mix.
+5. **Loudness normalization** — hits your integrated LUFS target via
    `pyloudnorm` (ITU-R BS.1770, the same standard Spotify/YouTube use
    for their own normalization).
-5. **True-peak limiter** — oversampled lookahead limiter, keeps
+6. **True-peak limiter** — oversampled lookahead limiter, keeps
    inter-sample peaks under your ceiling so lossy codecs don't clip.
-6. **Dither** — light TPDF dither added automatically on 16-bit export.
+   Fully vectorized numpy — no per-sample Python loop — so it's fast
+   even on hot masters that need real gain reduction.
+7. **Dither** — light TPDF dither added automatically on 16-bit export.
 
 ## Known limitations
 
@@ -109,8 +130,7 @@ flags on `master.py`, run in this order:
   brickwall like a commercial limiter (Ozone, FabFilter Pro-L2) — for
   very hot masters it can sound slightly more "pumpy" under heavy gain
   reduction. Keep gain reduction under ~4–6dB for best results.
-- No stereo widening or multiband compression — deliberately kept
-  simple.
+- No multiband compression — deliberately kept simple.
 - macOS builds are ad-hoc signed (satisfies Gatekeeper on the machine
   that built them, not one they're copied to); Windows/Linux builds
   are unsigned entirely. Real code signing/notarization is tracked in
@@ -241,5 +261,8 @@ python3 master.py --peaks input.wav --buckets 200
 | `--no-eq` | off | Skip the corrective EQ step |
 | `--no-saturation` | off | Skip saturation |
 | `--saturation` | 0.05 | Saturation drive amount, 0–1 |
+| `--saturation-crossover` | 630 | Hz above which saturation is applied; ≤0 saturates full-band |
+| `--no-width` | off | Skip stereo width |
+| `--width` | 1.0 | Stereo width multiplier: 1.0 = unchanged, 0 = mono, >1 = wider |
 | `--bit-depth` | PCM_16 | PCM_16 / PCM_24 / FLOAT |
 | `--transcode` | off | Skip the chain — just re-encode already-mastered audio to `--bit-depth` (what Export's preview-reuse path uses) |
