@@ -627,6 +627,17 @@ masterBtn.addEventListener('click', async () => {
           previewParams: paramsAtRunStart,
         });
       }
+
+      // Switched here, after libraryUpdate above has persisted — Compare's
+      // own refresh (triggered by the tab switch's 'screen-activated'
+      // event) reads the track fresh from the library, so switching any
+      // earlier would have it render the pre-run preview data for a
+      // moment. Gated on stillViewingThisTrack for the same reason the
+      // status line/meters are — jumping the user to Compare for a run
+      // they've already navigated away from would be its own surprise.
+      if (stillViewingThisTrack && result.success) {
+        activateTab('compare');
+      }
     }
   );
 });

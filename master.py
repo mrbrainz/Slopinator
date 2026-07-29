@@ -142,6 +142,42 @@ def saturate(data, sr, amount=0.05, crossover=630):
     return low + saturated_high
 
 
+def _rolling_max_forward(x, window):
+    """result[i] = max(x[i : min(len(x), i+window)]) for every i, without a
+    per-sample Python loop (the naive version costs O(n*window) — 31M+
+    samples * an ~880-sample window is what made the limiter stage the
+    slowest part of a run by far). Block-decomposition trick: pad to a
+    multiple of `window`, split into blocks, take a left-to-right cummax
+    (prefix) and a right-to-left cummax (suffix) within each block — any
+    forward window of length `window` starting at i spans at most two
+    adjacent blocks, so result[i] = max(suffix[i], prefix[i+window-1])."""
+    n = len(x)
+    if window <= 1:
+        return x.copy()
+    padded_len = ((n + 2 * window - 2) // window) * window
+    xp = np.zeros(padded_len, dtype=x.dtype)
+    xp[:n] = x
+    blocks = xp.reshape(-1, window)
+    prefix = np.maximum.accumulate(blocks, axis=1).reshape(-1)
+    suffix = np.maximum.accumulate(blocks[:, ::-1], axis=1)[:, ::-1].reshape(-1)
+    return np.maximum(suffix[:n], prefix[np.arange(n) + window - 1])
+
+
+def _release_smooth(gain_curve, max_step):
+    """smoothed[i] = min(gain_curve[i], smoothed[i-1] + max_step), the
+    same one-sided (release-only; an instant drop always passes straight
+    through) slew-rate limit the old per-sample loop applied — but as a
+    closed form instead of a recurrence. Substituting v[i] = smoothed[i] -
+    i*max_step turns it into v[i] = min(gain_curve[i] - i*max_step,
+    v[i-1]): a plain running minimum, i.e. np.minimum.accumulate — so
+    subtract the ramp, take the cumulative min, add the ramp back."""
+    n = len(gain_curve)
+    if n == 0:
+        return gain_curve.copy()
+    ramp = np.arange(n) * max_step
+    return np.minimum.accumulate(gain_curve - ramp) + ramp
+
+
 def true_peak_limiter(data, sr, ceiling_db=-1.0, oversample=4):
     """Lookahead brick-wall limiter with oversampling for true-peak safety.
 
@@ -164,23 +200,18 @@ def true_peak_limiter(data, sr, ceiling_db=-1.0, oversample=4):
         sr_up = sr * oversample
         window = max(1, int(sr_up * 0.005))  # 5ms lookahead
         abs_up = np.max(np.abs(up), axis=1)
-        gain_curve_up = np.ones_like(abs_up)
-        # smooth envelope (lookahead max filter)
-        for i in range(len(abs_up)):
-            lo = i
-            hi = min(len(abs_up), i + window)
-            local_max = np.max(abs_up[lo:hi]) if hi > lo else abs_up[i]
-            if local_max > ceiling:
-                gain_curve_up[i] = ceiling / local_max
-        # release smoothing so gain reduction doesn't chatter
+        # smooth envelope (lookahead max filter) — vectorized, see
+        # _rolling_max_forward's docstring for why this used to be the
+        # slowest stage in the whole chain by a wide margin (a per-sample
+        # Python loop over millions of oversampled samples, each doing an
+        # ~880-sample np.max() call).
+        local_max = _rolling_max_forward(abs_up, window)
+        safe_local_max = np.maximum(local_max, ceiling)  # avoid a divide-by-zero warning on the discarded branch
+        gain_curve_up = np.where(local_max > ceiling, ceiling / safe_local_max, 1.0)
+        # release smoothing so gain reduction doesn't chatter — also
+        # vectorized, see _release_smooth's docstring
         release_samples = max(1, int(sr_up * 0.050))
-        smoothed = np.copy(gain_curve_up)
-        for i in range(1, len(smoothed)):
-            if smoothed[i] > smoothed[i - 1]:
-                # slow release back up
-                max_step = 1.0 / release_samples
-                smoothed[i] = min(smoothed[i], smoothed[i - 1] + max_step)
-        gain_curve_up = smoothed
+        gain_curve_up = _release_smooth(gain_curve_up, 1.0 / release_samples)
 
         # Downsample back to original rate: each original sample maps to
         # `oversample` upsampled ones, so take the min gain across its
