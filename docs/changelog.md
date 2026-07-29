@@ -11,6 +11,20 @@ All notable changes to this project are documented here. Format is based on
 ### Changed
 
 ### Fixed
+- `true_peak_limiter()` computed its gain-reduction curve from original-rate
+  sample peaks, even though the initial over/no-over check correctly used
+  the oversampled (inter-sample-aware) signal — so a track could trip the
+  oversampled check, get "limited" against a peak reading that reads lower
+  than the true peak, and still ship over the ceiling. Reproduced on a
+  synthetic near-Nyquist tone at a -1.0 dBTP ceiling: old code left the true
+  peak at -0.68 dBTP (0.32 dB over spec); now holds at -0.999 dBTP. The
+  gain curve (lookahead + release smoothing) is now computed entirely on
+  the oversampled envelope, then downsampled back via a block-min so the
+  strictest point in each block wins. Also fixed `master_file()`'s and
+  `transcode_file()`'s final "Done." summary, which measured true peak the
+  same non-oversampled way — could under-report the actual true peak of the
+  file just written. New shared `true_peak_db()` helper used by both
+  summaries and `analyze_file()` (#51)
 - v0.2.0's release notes went out as three empty headers, then (after a
   manual rewrite) as a verbatim technical changelog dump — the
   `release-notes` CI job hardcoded extracting `[Unreleased]`, which by

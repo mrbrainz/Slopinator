@@ -122,7 +122,13 @@ def saturate(data, amount=0.05):
 
 
 def true_peak_limiter(data, sr, ceiling_db=-1.0, oversample=4):
-    """Lookahead brick-wall limiter with oversampling for true-peak safety."""
+    """Lookahead brick-wall limiter with oversampling for true-peak safety.
+
+    The gain-reduction curve itself is computed on the oversampled signal
+    (not just the initial over/no-over check) — a limiter driven by
+    original-rate sample peaks can under-limit inter-sample peaks that only
+    show up once you oversample, which defeats the point of oversampling in
+    the first place."""
     ceiling = 10 ** (ceiling_db / 20)
 
     # Oversample to catch inter-sample peaks
@@ -131,32 +137,51 @@ def true_peak_limiter(data, sr, ceiling_db=-1.0, oversample=4):
     if peak <= ceiling:
         gain_curve = np.ones(data.shape[0])
     else:
-        # Simple lookahead gain-reduction limiter on the original-rate signal
-        window = max(1, int(sr * 0.005))  # 5ms lookahead
-        abs_data = np.max(np.abs(data), axis=1)
-        gain_curve = np.ones_like(abs_data)
-        env = np.copy(abs_data)
+        # Lookahead gain-reduction limiter computed on the oversampled
+        # signal, then downsampled (via block-min, so the strictest
+        # requirement in each block wins) back to the original rate.
+        sr_up = sr * oversample
+        window = max(1, int(sr_up * 0.005))  # 5ms lookahead
+        abs_up = np.max(np.abs(up), axis=1)
+        gain_curve_up = np.ones_like(abs_up)
         # smooth envelope (lookahead max filter)
-        for i in range(len(env)):
+        for i in range(len(abs_up)):
             lo = i
-            hi = min(len(env), i + window)
-            local_max = np.max(abs_data[lo:hi]) if hi > lo else abs_data[i]
+            hi = min(len(abs_up), i + window)
+            local_max = np.max(abs_up[lo:hi]) if hi > lo else abs_up[i]
             if local_max > ceiling:
-                gain_curve[i] = ceiling / local_max
+                gain_curve_up[i] = ceiling / local_max
         # release smoothing so gain reduction doesn't chatter
-        release_samples = max(1, int(sr * 0.050))
-        smoothed = np.copy(gain_curve)
+        release_samples = max(1, int(sr_up * 0.050))
+        smoothed = np.copy(gain_curve_up)
         for i in range(1, len(smoothed)):
             if smoothed[i] > smoothed[i - 1]:
                 # slow release back up
                 max_step = 1.0 / release_samples
                 smoothed[i] = min(smoothed[i], smoothed[i - 1] + max_step)
-        gain_curve = smoothed
+        gain_curve_up = smoothed
+
+        # Downsample back to original rate: each original sample maps to
+        # `oversample` upsampled ones, so take the min gain across its
+        # block — applying anything less would under-cover whichever
+        # inter-sample point in that block needed the most reduction.
+        n = data.shape[0]
+        gain_curve = gain_curve_up[: n * oversample].reshape(n, oversample).min(axis=1)
 
     limited = data * gain_curve[:, None]
     # Final hard safety clip just in case
     limited = np.clip(limited, -ceiling, ceiling)
     return limited
+
+
+def true_peak_db(data, oversample=4):
+    """Oversampled true-peak reading in dBTP (catches inter-sample peaks a
+    plain sample-peak read would miss) — shared by the final-summary prints
+    and analyze_file() so they report the same thing true_peak_limiter()
+    actually limits against."""
+    up = signal.resample_poly(data, oversample, 1, axis=0)
+    peak = np.max(np.abs(up))
+    return 20 * np.log10(peak) if peak > 0 else float("-inf")
 
 
 def loudness_normalize(data, sr, target_lufs):
@@ -210,9 +235,8 @@ def master_file(in_path, out_path, target_lufs=-14.0, ceiling_db=-1.0,
 
     meter = pyln.Meter(sr)
     final_loudness = meter.integrated_loudness(data)
-    true_peak = np.max(np.abs(data))
-    true_peak_db = 20 * np.log10(true_peak) if true_peak > 0 else -np.inf
-    print(f"Done. Final: {final_loudness:.1f} LUFS, {true_peak_db:.2f} dBTP\n")
+    tp_db = true_peak_db(data)
+    print(f"Done. Final: {final_loudness:.1f} LUFS, {tp_db:.2f} dBTP\n")
 
 
 def transcode_file(in_path, out_path, bit_depth="PCM_16"):
@@ -232,9 +256,8 @@ def transcode_file(in_path, out_path, bit_depth="PCM_16"):
 
     meter = pyln.Meter(sr)
     final_loudness = meter.integrated_loudness(data)
-    true_peak = np.max(np.abs(data))
-    true_peak_db = 20 * np.log10(true_peak) if true_peak > 0 else -np.inf
-    print(f"Done. Final: {final_loudness:.1f} LUFS, {true_peak_db:.2f} dBTP\n")
+    tp_db = true_peak_db(data)
+    print(f"Done. Final: {final_loudness:.1f} LUFS, {tp_db:.2f} dBTP\n")
 
 
 def analyze_file(path, oversample=4):
@@ -245,13 +268,7 @@ def analyze_file(path, oversample=4):
 
     meter = pyln.Meter(sr)
     lufs = meter.integrated_loudness(data)
-
-    # Oversample for a genuine true-peak reading (catches inter-sample
-    # peaks a plain sample-peak read would miss) — same technique
-    # true_peak_limiter() uses.
-    up = signal.resample_poly(data, oversample, 1, axis=0)
-    peak = np.max(np.abs(up))
-    true_peak_db = 20 * np.log10(peak) if peak > 0 else float("-inf")
+    tp_db = true_peak_db(data, oversample)
 
     return {
         "path": path,
@@ -260,7 +277,7 @@ def analyze_file(path, oversample=4):
         "channels": data.shape[1],
         "bit_depth": info.subtype,
         "lufs": None if lufs == float("-inf") else round(lufs, 1),
-        "true_peak_db": None if true_peak_db == float("-inf") else round(true_peak_db, 2),
+        "true_peak_db": None if tp_db == float("-inf") else round(tp_db, 2),
     }
 
 
