@@ -21,6 +21,8 @@ I want to create a fully fledged Electron app
 5. Commit (footer `Co-Authored-By: Claude {{model}} <noreply@anthropic.com>`),
    push, `gh pr create` (PR-body footer
    `🤖 Generated with [Claude Code](https://claude.com/claude-code)`).
+5.5. Once the PR is created, run `npm run pack` to verify the change still
+   produces a working packaged build.
 6. **Stop** — the user merges and says "continue".
 
 ## Known gotchas
