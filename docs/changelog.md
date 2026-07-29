@@ -7,6 +7,21 @@ All notable changes to this project are documented here. Format is based on
 ## [Unreleased]
 
 ### Added
+- Band-split saturation: the Saturation module's `saturate()` now only
+  applies tanh drive to content above a crossover frequency (new
+  "CROSSOVER" slider in Chain view, `--saturation-crossover` CLI flag,
+  default 630Hz — a mastering-engineer suggestion after full-band
+  saturation was found to drive hardest on bass, the highest-amplitude
+  content in most masters, disproportionately building up peaks for
+  harmonic "warmth" that barely registers below the low-mids anyway. A
+  value of 0 (or the slider's minimum) disables the split and saturates
+  full-band, the original behavior. All three built-in presets tuned per
+  their existing drive amount: Streaming 800Hz (gentlest, air-band only),
+  Soundcloud 630Hz, Club 400Hz (most drive, more of the spectrum gets
+  excited, still well above its 80Hz mono-bass crossover).
+  `library.js`'s `loadPresets()` backfills the new field onto any
+  `presets.json` saved before this existed, same pattern as Width's
+  migration (#45) (#52)
 
 ### Changed
 

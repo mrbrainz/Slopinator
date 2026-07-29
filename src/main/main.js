@@ -118,6 +118,7 @@ function buildMasterArgs(params = {}) {
   if (params.ceiling != null) args.push('--ceiling', String(params.ceiling));
   if (params.crossover != null) args.push('--crossover', String(params.crossover));
   if (params.saturationAmount != null) args.push('--saturation', String(params.saturationAmount));
+  if (params.saturationCrossover != null) args.push('--saturation-crossover', String(params.saturationCrossover));
   if (params.widthAmount != null) args.push('--width', String(params.widthAmount));
   if (params.bitDepth) args.push('--bit-depth', params.bitDepth);
   if (params.eq === false) args.push('--no-eq');
