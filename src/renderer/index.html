@@ -81,13 +81,15 @@
         <div class="chain" id="module-rack"></div>
         <div class="mod-detail" id="mod-detail"></div>
 
-        <button class="btn" id="master-btn" disabled>Master</button>
-
         <p id="status"></p>
         <pre id="log"></pre>
       </div>
 
       <div class="meter-panel">
+        <button class="render-master-btn" id="master-btn" disabled>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span>Render Master Preview</span>
+        </button>
         <h4>Master output</h4>
         <div class="big-reading" id="meter-lufs">—<small> LUFS</small></div>
         <div class="reading-label">Integrated loudness</div>
@@ -115,6 +117,7 @@
           <div class="stat-line"><span>True peak</span><b id="compare-before-peak">—</b></div>
           <div class="stat-line"><span>Stereo bass</span><b>unlinked</b></div>
           <div class="stat-line"><span>Stereo width</span><b>original</b></div>
+          <div class="stat-line"><span>Saturation</span><b>unprocessed</b></div>
           <button class="listen-btn" id="compare-listen-before">&#9656; Listen to original</button>
         </div>
         <div class="compare-card after">
@@ -125,6 +128,7 @@
           <div class="stat-line"><span>True peak</span><b id="compare-after-peak">—</b></div>
           <div class="stat-line"><span>Stereo bass</span><b id="compare-after-bass">—</b></div>
           <div class="stat-line"><span>Stereo width</span><b id="compare-after-width">—</b></div>
+          <div class="stat-line"><span>Saturation</span><b id="compare-after-saturation">—</b></div>
           <button class="listen-btn amber" id="compare-listen-after">&#9656; Listen to mastered</button>
         </div>
       </div>
