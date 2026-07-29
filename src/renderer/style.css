@@ -275,6 +275,13 @@ select{width:100%;}
 .track-row.missing .track-sub{color:var(--danger);}
 .track-row.missing .tag{color:var(--danger);}
 
+.track-row.selected{
+  background:var(--panel-alt);
+  box-shadow:inset 3px 0 0 var(--amber);
+}
+.track-row.selected:hover{background:var(--panel-alt);}
+.track-row.selected .track-name{color:var(--amber);}
+
 .track-name{font-weight:600;font-size:14px;}
 .track-sub{color:var(--muted);font-size:12px;margin-top:2px;}
 

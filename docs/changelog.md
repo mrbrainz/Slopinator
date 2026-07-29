@@ -7,6 +7,13 @@ All notable changes to this project are documented here. Format is based on
 ## [Unreleased]
 
 ### Added
+- Library rows now highlight whichever track is currently loaded in
+  Chain view (amber left accent + tinted background) — so switching back
+  to Library after picking a track shows at a glance what's loaded,
+  instead of having to remember or reopen Chain view to check.
+  `refreshLibrary()` compares each row's id against
+  `window.getCurrentChainTrack().trackId` on every render, so it stays
+  in sync on tab switches without any new event plumbing (#61)
 - A successful master run now switches straight to the Compare tab
   (previously stayed on Chain view, requiring a manual tab click to hear
   the result). Only happens for the track actually being viewed when the
