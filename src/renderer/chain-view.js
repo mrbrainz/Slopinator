@@ -16,6 +16,8 @@ const detailEl = document.getElementById('mod-detail');
 const meterLufsEl = document.getElementById('meter-lufs');
 const meterLadderEl = document.getElementById('meter-ladder');
 const meterPeakLabelEl = document.getElementById('meter-peak-label');
+const masteringOverlayEl = document.getElementById('mastering-overlay');
+const masteringStageEl = document.getElementById('mastering-stage');
 
 let inputPath = null;
 let currentTrackId = null;
@@ -486,18 +488,40 @@ window.getCurrentChainTrack = () => ({ trackId: currentTrackId, path: inputPath 
 
 // --- mastering ---
 
+// master.py's own top-level print()s (see master.py's master_file()) are
+// the stage headers — e.g. "Applying corrective EQ...", "Limiting to
+// -0.3 dBTP true peak ceiling...". Its one sub-detail line ("  measured
+// input loudness: ...") is indented, which is what distinguishes it from
+// a new stage rather than a detail of the current one.
+function latestStageLine(text) {
+  const lines = text.split('\n');
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i].trim();
+    if (line && !lines[i].startsWith(' ')) return line;
+  }
+  return null;
+}
+
+function setMasteringOverlay(active) {
+  masteringOverlayEl.hidden = !active;
+  if (active) masteringStageEl.textContent = 'Starting…';
+}
+
 async function runWithLogging(runFn, onDone) {
   logEl.textContent = '';
 
   const unsubscribe = window.slopinator.onMasterLog(({ text }) => {
     logEl.textContent += text;
     logEl.scrollTop = logEl.scrollHeight;
+    const stage = latestStageLine(logEl.textContent);
+    if (stage) masteringStageEl.textContent = stage;
   });
 
   const result = await runFn();
   unsubscribe();
   await onDone(result);
   isMastering = false;
+  setMasteringOverlay(false);
   updateMasterButton();
 }
 
@@ -511,6 +535,7 @@ masterBtn.addEventListener('click', async () => {
   if (isMastering) return;
   isMastering = true;
   updateMasterButton();
+  setMasteringOverlay(true);
 
   statusEl.textContent = 'Mastering…';
   const trackIdAtRunStart = currentTrackId;

@@ -7,6 +7,15 @@ All notable changes to this project are documented here. Format is based on
 ## [Unreleased]
 
 ### Added
+- Mastering now locks the whole app behind a full-screen overlay (spinner
+  + the current stage, e.g. "Limiting to -0.3 dBTP true peak ceiling…",
+  read straight from `master.py`'s own stdout) instead of leaving the UI
+  fully interactive with no feedback while the final limiter/loudness
+  steps — the slowest part of a run — grind through with nothing visible
+  changing. Settings menu gained a "Debug console" toggle (off by
+  default) for the raw stdout/stderr log (`#log` in Chain view), now
+  implementation detail behind the new overlay rather than always-on
+  UI (#56)
 - Library screen shows a skeleton row (spinning throbbers, filename only)
   for each track while it's being imported and analyzed, instead of a
   blanket "Importing…" header with no per-track feedback. `library-import`
