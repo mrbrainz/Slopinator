@@ -22,6 +22,7 @@ let currentTrackId = null;
 let waveformBars = [];
 let inputMissing = false;
 let waveDurationSec = 0;
+let isMastering = false;
 
 function formatChainTime(sec) {
   if (!isFinite(sec) || sec < 0) sec = 0;
@@ -429,7 +430,7 @@ waveformEl.addEventListener('click', async (e) => {
 // the two write paths used to cause.
 
 function updateMasterButton() {
-  masterBtn.disabled = !inputPath || inputMissing;
+  masterBtn.disabled = !inputPath || inputMissing || isMastering;
 }
 
 async function selectChainInput(path, trackId = null) {
@@ -486,7 +487,6 @@ window.getCurrentChainTrack = () => ({ trackId: currentTrackId, path: inputPath 
 // --- mastering ---
 
 async function runWithLogging(runFn, onDone) {
-  masterBtn.disabled = true;
   logEl.textContent = '';
 
   const unsubscribe = window.slopinator.onMasterLog(({ text }) => {
@@ -497,25 +497,46 @@ async function runWithLogging(runFn, onDone) {
   const result = await runFn();
   unsubscribe();
   await onDone(result);
+  isMastering = false;
   updateMasterButton();
 }
 
 masterBtn.addEventListener('click', async () => {
+  // Set synchronously, before any await — closes the race that let a
+  // second click (or picking a different track, whose selectChainInput
+  // also calls updateMasterButton) sneak a second run in while the first
+  // was still going: master.py can take a while, and disabling only
+  // happened inside runWithLogging, after this handler's own
+  // getPreviewPath await had already yielded control back once.
+  if (isMastering) return;
+  isMastering = true;
+  updateMasterButton();
+
   statusEl.textContent = 'Mastering…';
   const trackIdAtRunStart = currentTrackId;
+  const inputPathAtRunStart = inputPath;
   const presetAtRunStart = currentPresetName();
   const paramsAtRunStart = { ...params };
   const previewPath = await window.slopinator.getPreviewPath(trackIdAtRunStart);
 
   runWithLogging(
-    () => window.slopinator.runMaster({ inputPath, outputPath: previewPath, params }),
+    () => window.slopinator.runMaster({ inputPath: inputPathAtRunStart, outputPath: previewPath, params: paramsAtRunStart }),
     async (result) => {
-      statusEl.textContent = result.success
-        ? 'Done — preview ready. Check it against the original in Compare.'
-        : `Failed (exit ${result.code}): ${result.stderr.trim() || 'unknown error'}`;
+      // Only the track that was actually being viewed when this run
+      // finishes should have its result reflected in the shared status
+      // line/meter sidebar — otherwise a slow run for a track the user
+      // has since switched away from can finish after a second run and
+      // stomp the currently-selected track's live reading with stale
+      // numbers, even though runs are now serialized and can't overlap.
+      const stillViewingThisTrack = trackIdAtRunStart === currentTrackId;
 
-      if (result.success) {
-        updateMeters(result.finalLufs, result.finalTruePeakDb);
+      if (stillViewingThisTrack) {
+        statusEl.textContent = result.success
+          ? 'Done — preview ready. Check it against the original in Compare.'
+          : `Failed (exit ${result.code}): ${result.stderr.trim() || 'unknown error'}`;
+        if (result.success) {
+          updateMeters(result.finalLufs, result.finalTruePeakDb);
+        }
       }
 
       if (result.success && trackIdAtRunStart) {
