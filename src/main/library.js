@@ -148,16 +148,16 @@ const DEFAULT_PRESETS = [
     // Width left unchanged (100%) — has to translate safely across every
     // playback system a stream might land on, including mono/phone
     // speakers, so no reason to push the stereo image further. Saturation
-    // crossover kept high (800Hz) — only the air/presence band gets any
-    // harmonic drive, keeping the effect as subtle as the low drive amount
-    // itself already implies.
+    // crossover at 630Hz — same as the other two presets; per-preset
+    // tuning (800/630/400Hz) was tried first but 630Hz alone tested
+    // better across the board, so all three now share it.
     params: {
       eq: true,
       monoBass: true,
       crossover: 120,
       saturation: true,
       saturationAmount: 0.03,
-      saturationCrossover: 800,
+      saturationCrossover: 630,
       width: true,
       widthAmount: 1.0,
       target: -14,
@@ -172,7 +172,7 @@ const DEFAULT_PRESETS = [
     // speakers/earbuds while keeping a safe -1dBTP ceiling for its transcode.
     // Slightly wider (110%) — mostly a headphone/earbud listening context,
     // where extra width reads as size rather than translation risk.
-    // Saturation crossover at 630Hz (upper-mid glue without touching bass).
+    // Saturation crossover at 630Hz — upper-mid glue without touching bass.
     params: {
       eq: true,
       monoBass: true,
@@ -195,17 +195,15 @@ const DEFAULT_PRESETS = [
     // to protect. A bit more width (115%) for size on a big system —
     // mono_bass already protects everything below the crossover, so this
     // only ever widens content that's already safe to spread out.
-    // Saturation crossover lowered to 400Hz — with the most drive of the
-    // three presets, more of the spectrum gets harmonic excitement for
-    // perceived loudness/punch, while still sitting well above the 80Hz
-    // mono-bass crossover so it never fights that safety net either.
+    // Saturation crossover at 630Hz, same as the other two presets — see
+    // Streaming's comment above for why all three converged on this value.
     params: {
       eq: true,
       monoBass: true,
       crossover: 80,
       saturation: true,
       saturationAmount: 0.08,
-      saturationCrossover: 400,
+      saturationCrossover: 630,
       width: true,
       widthAmount: 1.15,
       target: -8,

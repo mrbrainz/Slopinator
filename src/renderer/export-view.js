@@ -47,7 +47,7 @@ const DEFAULT_EXPORT_PARAMS = {
   crossover: 80,
   saturation: true,
   saturationAmount: 0.08,
-  saturationCrossover: 400,
+  saturationCrossover: 630,
   width: true,
   widthAmount: 1.15,
   target: -8,

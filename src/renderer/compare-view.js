@@ -16,6 +16,7 @@ const afterLufsEl = document.getElementById('compare-after-lufs');
 const afterPeakEl = document.getElementById('compare-after-peak');
 const afterBassEl = document.getElementById('compare-after-bass');
 const afterWidthEl = document.getElementById('compare-after-width');
+const afterSaturationEl = document.getElementById('compare-after-saturation');
 const waveBeforeEl = document.getElementById('compare-wave-before');
 const waveAfterEl = document.getElementById('compare-wave-after');
 const waveTimeBeforeEl = document.getElementById('compare-wave-time-before');
@@ -230,6 +231,15 @@ async function refreshCompare() {
 
   const widthUsed = track.previewParams && track.previewParams.width;
   afterWidthEl.textContent = widthUsed ? `${Math.round(track.previewParams.widthAmount * 100)}%` : 'unchanged';
+
+  const saturationUsed = track.previewParams && track.previewParams.saturation;
+  if (!saturationUsed) {
+    afterSaturationEl.textContent = 'bypassed';
+  } else {
+    const drivePct = Math.round(track.previewParams.saturationAmount * 100);
+    const crossover = track.previewParams.saturationCrossover;
+    afterSaturationEl.textContent = crossover > 0 ? `${drivePct}% above ${Math.round(crossover)}Hz` : `${drivePct}% full-band`;
+  }
 
   const [before, after] = await Promise.all([
     renderCompareWave(waveBeforeEl, track.path),

@@ -22,8 +22,25 @@ All notable changes to this project are documented here. Format is based on
   `library.js`'s `loadPresets()` backfills the new field onto any
   `presets.json` saved before this existed, same pattern as Width's
   migration (#45) (#52)
+- Compare screen's before/after cards gained a "Saturation" stat line,
+  matching the existing Stereo bass/Stereo width lines — shows drive% and
+  crossover (e.g. "8% above 630Hz") for the mastered side, "bypassed" if
+  saturation was off, "unprocessed" on the original side (#53)
 
 ### Changed
+- All three built-in presets (Streaming/Soundcloud/Club) now share the
+  same 630Hz saturation crossover, replacing the per-preset tuning
+  (800/630/400Hz) #52 shipped with — 630Hz alone tested better across the
+  board than spreading it per preset. `library.js`'s migration fallback
+  and `export-view.js`'s Club-mirroring fallback both already defaulted to
+  630Hz, so only the three preset values themselves changed (#53)
+- Chain view's Master button moved from below the module rack to above
+  the "Master output" meter panel in the right-hand column, redesigned to
+  stand out — larger, bold uppercase type, a play-triangle icon, and an
+  amber-to-orange gradient with a glow/hover lift (previously styled the
+  same as every other plain `.btn`). Relabeled "Render Master Preview" for
+  clarity on what it actually produces (Chain view's preview slot, not a
+  final export — see "Preview vs export" in `docs/context.md`) (#53)
 
 ### Fixed
 - `true_peak_limiter()` computed its gain-reduction curve from original-rate
