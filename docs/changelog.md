@@ -6,6 +6,19 @@ All notable changes to this project are documented here. Format is based on
 
 ## [Unreleased]
 
+### Changed
+- Mastering overlay's stage text (#56) no longer surfaces Python
+  `UserWarning`s (e.g. pyloudnorm's "Possible clipped samples in output."
+  during loudness normalize) — those land on stderr same as every other
+  line, so the overlay was briefly showing them as if they were a real
+  stage instead of just noise; it now skips them and keeps whatever the
+  last actual stage was until the next one arrives. The "Writing …"
+  stage also no longer shows the full on-disk preview cache path (e.g.
+  `/Users/…/Application Support/Slopinator/previews/<uuid>.flac
+  (PCM_16)...`) — simplified to "Writing mastered FLAC to local cache".
+  Both are display-only changes in `chain-view.js`; the debug console
+  (off by default) still shows the real, unmodified lines (#57)
+
 ### Added
 - Mastering now locks the whole app behind a full-screen overlay (spinner
   + the current stage, e.g. "Limiting to -0.3 dBTP true peak ceiling…",
