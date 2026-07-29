@@ -80,12 +80,12 @@ function meterEl(value, unit, warn) {
   return el;
 }
 
-function renderRow(track, missing) {
+function renderRow(track, missing, selected) {
   const { dot, tag } = statusMeta(track, missing);
   const warn = track.status === 'needs_mastering';
 
   const row = document.createElement('div');
-  row.className = 'track-row' + (missing ? ' missing' : '');
+  row.className = 'track-row' + (missing ? ' missing' : '') + (selected ? ' selected' : '');
 
   const dotEl = document.createElement('div');
   dotEl.className = `status-dot ${dot}`;
@@ -153,8 +153,10 @@ async function refreshLibrary() {
   const rows = tracks.map((track, i) => ({ track, missing: missingFlags[i] }));
   rows.sort((a, b) => new Date(b.track.addedAt) - new Date(a.track.addedAt));
 
+  const chainTrackId = window.getCurrentChainTrack ? window.getCurrentChainTrack().trackId : null;
+
   libraryListEl.innerHTML = '';
-  rows.forEach(({ track, missing }) => libraryListEl.appendChild(renderRow(track, missing)));
+  rows.forEach(({ track, missing }) => libraryListEl.appendChild(renderRow(track, missing, track.id === chainTrackId)));
 
   const needsCount = tracks.filter((t) => t.status === 'needs_mastering').length;
   const missingCount = missingFlags.filter(Boolean).length;
@@ -169,7 +171,7 @@ async function refreshLibrary() {
   // load the top-of-list track into it so it's not sitting blank the
   // first time the user switches over. Doesn't switch tabs — only an
   // explicit Library row click (selectChainInputAndNavigate) does that.
-  if (rows.length && window.getCurrentChainTrack && window.selectChainInput && !window.getCurrentChainTrack().trackId) {
+  if (rows.length && window.selectChainInput && !chainTrackId) {
     window.selectChainInput(rows[0].track.path, rows[0].track.id);
   }
 }
