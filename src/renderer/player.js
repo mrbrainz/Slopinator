@@ -4,6 +4,13 @@
 
 const audioEl = new Audio();
 let currentPath = null;
+// path -> last playback position (seconds), so switching away from a file
+// and back later (e.g. Compare's A/B listen buttons share one <audio>
+// element, so playing "before" then "after" then "before" again always
+// reloads) resumes instead of restarting from 0. Cleared on natural end
+// (see the 'ended' listener below) so a finished track starts fresh next
+// time rather than "resuming" at its own end.
+const lastPositions = new Map();
 // Which screen last initiated playback/seek on the shared element (e.g.
 // 'chain', 'compare-before', 'compare-after') — Chain view's inputPath and
 // Compare's originalPath are frequently the exact same file, so path
@@ -38,6 +45,17 @@ function load(filePath, force = false) {
       resolve(audioEl.duration);
       return;
     }
+
+    // A genuine switch to a different path — remember where playback was
+    // left on the outgoing one, and resume the incoming one from wherever
+    // it was left, if anywhere. Deliberately skipped for a forced reload
+    // of the *same* path (force=true, filePath === currentPath): that
+    // means the bytes at this path just changed (e.g. a fresh re-master),
+    // where starting over makes more sense than resuming into audio that
+    // isn't the same recording anymore.
+    const switchingPath = currentPath !== null && currentPath !== filePath;
+    if (switchingPath) lastPositions.set(currentPath, audioEl.currentTime);
+
     currentPath = filePath;
     audioEl.src = toFileUrl(filePath);
 
@@ -47,6 +65,10 @@ function load(filePath, force = false) {
     };
     const onLoaded = () => {
       cleanup();
+      const resumeAt = switchingPath ? lastPositions.get(filePath) : undefined;
+      if (resumeAt && isFinite(resumeAt) && resumeAt < audioEl.duration) {
+        audioEl.currentTime = resumeAt;
+      }
       resolve(audioEl.duration);
     };
     const onError = () => {
@@ -109,6 +131,10 @@ function onTimeUpdate(callback) {
   audioEl.addEventListener('timeupdate', handler);
   return () => audioEl.removeEventListener('timeupdate', handler);
 }
+
+audioEl.addEventListener('ended', () => {
+  if (currentPath) lastPositions.delete(currentPath);
+});
 
 function onEnded(callback) {
   audioEl.addEventListener('ended', callback);
