@@ -144,14 +144,14 @@ async function refreshLibrary() {
   const tracks = await window.slopinator.libraryList();
   const missingFlags = await Promise.all(tracks.map((t) => window.slopinator.classifyPath(t.path).then((kind) => kind === null)));
 
-  // library.js's addTrack() pushes to the end, so `tracks` comes back
-  // oldest-first — sort newest-first for display, so a new import lands
-  // at the top instead of the bottom. Stable sort (spec'd since ES2019,
-  // which every V8 this app ships on satisfies) means two tracks added
-  // in the exact same millisecond keep their original relative (drop)
-  // order rather than an arbitrary one.
+  // Rendered in the same order library.js's addTrack() stores them
+  // (pushed to the end, so oldest-first) — deliberately un-sorted here,
+  // matching export-view.js's own queue (a plain filter(), no sort). An
+  // earlier version sorted newest-first for display, which read fine in
+  // isolation but reshuffled every existing row's position on each new
+  // import instead of leaving them where they were and only adding new
+  // ones — the opposite of what a stable top-to-bottom list should do.
   const rows = tracks.map((track, i) => ({ track, missing: missingFlags[i] }));
-  rows.sort((a, b) => new Date(b.track.addedAt) - new Date(a.track.addedAt));
 
   const chainTrackId = window.getCurrentChainTrack ? window.getCurrentChainTrack().trackId : null;
 
@@ -184,7 +184,10 @@ async function importPaths(paths) {
   paths.forEach((filePath) => {
     const row = renderSkeletonRow(filePath);
     skeletonRows.set(filePath, row);
-    libraryListEl.prepend(row);
+    // Appended, not prepended — matches refreshLibrary()'s natural,
+    // un-sorted (oldest/existing-first) order below, so a new import
+    // queues up after existing tracks instead of jumping above them.
+    libraryListEl.appendChild(row);
   });
 
   await window.slopinator.libraryImport(paths);

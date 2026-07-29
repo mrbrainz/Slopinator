@@ -534,6 +534,7 @@ function isWarningLine(line) {
 // user needs to see; the debug console (off by default, see settings.js)
 // still shows the raw line for anyone who does.
 function friendlyStageText(line) {
+  if (/^Loading .+ \.\.\.$/.test(line)) return 'Loading audio file to be mastered...';
   if (/^Writing .+\.\w+ \(.+\)\.\.\.$/.test(line)) return 'Writing mastered FLAC to local cache';
   return line;
 }
