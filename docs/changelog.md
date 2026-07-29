@@ -7,6 +7,14 @@ All notable changes to this project are documented here. Format is based on
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Fixed
+
+## [0.3.0] - 2026-07-29
+
+### Added
 - Export screen now flags a track whose source file is missing on disk
   (moved/deleted since import) the same way Library already does —
   dimmed row, red "Original file missing" warning with the path, preset
@@ -34,6 +42,41 @@ All notable changes to this project are documented here. Format is based on
   of the existing `selectChainInputAndNavigate`), called from
   `library-view.js`'s `refreshLibrary()`. Doesn't switch tabs — only an
   explicit row click does that (#59)
+- Mastering now locks the whole app behind a full-screen overlay (spinner
+  + the current stage, e.g. "Limiting to -0.3 dBTP true peak ceiling…",
+  read straight from `master.py`'s own stdout) instead of leaving the UI
+  fully interactive with no feedback while the final limiter/loudness
+  steps — the slowest part of a run — grind through with nothing visible
+  changing. Settings menu gained a "Debug console" toggle (off by
+  default) for the raw stdout/stderr log (`#log` in Chain view), now
+  implementation detail behind the new overlay rather than always-on
+  UI (#56)
+- Library screen shows a skeleton row (spinning throbbers, filename only)
+  for each track while it's being imported and analyzed, instead of a
+  blanket "Importing…" header with no per-track feedback. `library-import`
+  now streams a `library-import-progress` event to the renderer after
+  each file is added and again after it's analyzed, so a track's skeleton
+  flips to real data as soon as that file is ready — not after the whole
+  batch finishes (#54)
+- Band-split saturation: the Saturation module's `saturate()` now only
+  applies tanh drive to content above a crossover frequency (new
+  "CROSSOVER" slider in Chain view, `--saturation-crossover` CLI flag,
+  default 630Hz — a mastering-engineer suggestion after full-band
+  saturation was found to drive hardest on bass, the highest-amplitude
+  content in most masters, disproportionately building up peaks for
+  harmonic "warmth" that barely registers below the low-mids anyway. A
+  value of 0 (or the slider's minimum) disables the split and saturates
+  full-band, the original behavior. All three built-in presets tuned per
+  their existing drive amount: Streaming 800Hz (gentlest, air-band only),
+  Soundcloud 630Hz, Club 400Hz (most drive, more of the spectrum gets
+  excited, still well above its 80Hz mono-bass crossover).
+  `library.js`'s `loadPresets()` backfills the new field onto any
+  `presets.json` saved before this existed, same pattern as Width's
+  migration (#45) (#52)
+- Compare screen's before/after cards gained a "Saturation" stat line,
+  matching the existing Stereo bass/Stereo width lines — shows drive% and
+  crossover (e.g. "8% above 630Hz") for the mastered side, "bypassed" if
+  saturation was off, "unprocessed" on the original side (#53)
 
 ### Changed
 - Library list ordering reverted to match Export's — un-sorted, same as
@@ -80,45 +123,6 @@ All notable changes to this project are documented here. Format is based on
   (PCM_16)...`) — simplified to "Writing mastered FLAC to local cache".
   Both are display-only changes in `chain-view.js`; the debug console
   (off by default) still shows the real, unmodified lines (#57)
-
-### Added
-- Mastering now locks the whole app behind a full-screen overlay (spinner
-  + the current stage, e.g. "Limiting to -0.3 dBTP true peak ceiling…",
-  read straight from `master.py`'s own stdout) instead of leaving the UI
-  fully interactive with no feedback while the final limiter/loudness
-  steps — the slowest part of a run — grind through with nothing visible
-  changing. Settings menu gained a "Debug console" toggle (off by
-  default) for the raw stdout/stderr log (`#log` in Chain view), now
-  implementation detail behind the new overlay rather than always-on
-  UI (#56)
-- Library screen shows a skeleton row (spinning throbbers, filename only)
-  for each track while it's being imported and analyzed, instead of a
-  blanket "Importing…" header with no per-track feedback. `library-import`
-  now streams a `library-import-progress` event to the renderer after
-  each file is added and again after it's analyzed, so a track's skeleton
-  flips to real data as soon as that file is ready — not after the whole
-  batch finishes (#54)
-- Band-split saturation: the Saturation module's `saturate()` now only
-  applies tanh drive to content above a crossover frequency (new
-  "CROSSOVER" slider in Chain view, `--saturation-crossover` CLI flag,
-  default 630Hz — a mastering-engineer suggestion after full-band
-  saturation was found to drive hardest on bass, the highest-amplitude
-  content in most masters, disproportionately building up peaks for
-  harmonic "warmth" that barely registers below the low-mids anyway. A
-  value of 0 (or the slider's minimum) disables the split and saturates
-  full-band, the original behavior. All three built-in presets tuned per
-  their existing drive amount: Streaming 800Hz (gentlest, air-band only),
-  Soundcloud 630Hz, Club 400Hz (most drive, more of the spectrum gets
-  excited, still well above its 80Hz mono-bass crossover).
-  `library.js`'s `loadPresets()` backfills the new field onto any
-  `presets.json` saved before this existed, same pattern as Width's
-  migration (#45) (#52)
-- Compare screen's before/after cards gained a "Saturation" stat line,
-  matching the existing Stereo bass/Stereo width lines — shows drive% and
-  crossover (e.g. "8% above 630Hz") for the mastered side, "bypassed" if
-  saturation was off, "unprocessed" on the original side (#53)
-
-### Changed
 - All three built-in presets (Streaming/Soundcloud/Club) now share the
   same 630Hz saturation crossover, replacing the per-preset tuning
   (800/630/400Hz) #52 shipped with — 630Hz alone tested better across the
