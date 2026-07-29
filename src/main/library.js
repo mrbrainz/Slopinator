@@ -254,6 +254,23 @@ function withSaturationCrossoverDefault(preset) {
   };
 }
 
+// PR #52 shipped Streaming/Club with per-preset saturationCrossover
+// tuning (800/400Hz); PR #53 changed the built-in defaults to a uniform
+// 630Hz across all three, but withSaturationCrossoverDefault() above only
+// backfills a *missing* field — any presets.json written between those
+// two PRs already had the field set (to the old 800/400 values), so the
+// migration silently left it stale on every install that had already run
+// the app at least once before #53 shipped. This is a one-time, narrower
+// fix specifically for that gap: only touches a built-in-named preset
+// whose value still matches the exact old default for that name, so an
+// actual user customization (any other value) is left alone.
+const STALE_SATURATION_CROSSOVER_BY_NAME = { Streaming: 800, Club: 400 };
+function withUniformSaturationCrossover(preset) {
+  const staleValue = STALE_SATURATION_CROSSOVER_BY_NAME[preset.name];
+  if (staleValue === undefined || preset.params.saturationCrossover !== staleValue) return preset;
+  return { ...preset, params: { ...preset.params, saturationCrossover: 630 } };
+}
+
 function loadPresets(userDataDir) {
   const file = presetsFilePath(userDataDir);
   if (!fs.existsSync(file)) {
@@ -262,7 +279,7 @@ function loadPresets(userDataDir) {
   }
   try {
     const saved = JSON.parse(fs.readFileSync(file, 'utf8'));
-    const migrated = saved.map(withWidthDefault).map(withSaturationCrossoverDefault);
+    const migrated = saved.map(withWidthDefault).map(withSaturationCrossoverDefault).map(withUniformSaturationCrossover);
     if (JSON.stringify(migrated) !== JSON.stringify(saved)) {
       fs.writeFileSync(file, JSON.stringify(migrated, null, 2));
     }

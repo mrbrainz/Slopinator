@@ -72,6 +72,29 @@ All notable changes to this project are documented here. Format is based on
   final export — see "Preview vs export" in `docs/context.md`) (#53)
 
 ### Fixed
+- Compare screen's shared `<audio>` element always restarted from 0 when
+  switching between the "Listen to original" and "Listen to mastered"
+  buttons (or back), even if you'd already listened partway through one
+  side — pausing and resuming the *same* side already worked (no reload
+  happens), but switching sides and coming back always reloaded from
+  disk, which resets `currentTime`. `player.js`'s `load()` now remembers
+  the outgoing path's position on every genuine switch and resumes the
+  incoming path from wherever it was last left, if anywhere — cleared on
+  natural end so a finished track starts fresh next time rather than
+  "resuming" at its own end. Skipped for a forced reload of the *same*
+  path (e.g. Chain view re-loading a preview right after a fresh master
+  run) since that means the bytes changed underneath it, where starting
+  over makes more sense than resuming into different audio (#58)
+- All three built-in presets were supposed to share a uniform 630Hz
+  saturation crossover as of #53, but that PR's migration only backfills
+  a *missing* `saturationCrossover` field — any `presets.json` already
+  written between #52 (which shipped Streaming/Club at 800Hz/400Hz) and
+  #53 already had the field set, so the migration silently left it stale
+  on every install that had run the app at least once in between. New
+  `withUniformSaturationCrossover()` migration specifically targets
+  built-in-named presets still sitting at the exact old default for that
+  name (800Hz for Streaming, 400Hz for Club) and corrects them to 630Hz,
+  without touching a genuine user customization at some other value (#58)
 - Chain view's Master button could launch a second, concurrent master run
   while an earlier one was still going — clicking Master disabled the
   button only inside `runWithLogging`, *after* the click handler's own
