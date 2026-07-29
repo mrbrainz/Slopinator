@@ -113,12 +113,33 @@ def stereo_width(data, amount=1.0):
     return np.stack([mid + side, mid - side], axis=1)
 
 
-def saturate(data, amount=0.05):
-    """Gentle tanh saturation for glue/warmth. amount: 0 = none."""
+def saturate(data, sr, amount=0.05, crossover=630):
+    """Gentle tanh saturation for glue/warmth. amount: 0 = none.
+
+    Band-split by default: only the content above `crossover` Hz is
+    saturated, the band below passes through untouched. Full-band tanh
+    saturation drives hardest on whatever has the most amplitude, which for
+    most masters is the bass — so it dominates the harmonic distortion and
+    pushes peaks up disproportionately, while the added harmonics from
+    saturating low frequencies barely register as "warmth" anyway. Splitting
+    at a crossover (630Hz by default landed in mastering-engineer feedback
+    as a good pick for upper-mid/high harmonic glue without touching the low
+    end) keeps the effect where it's actually audible as glue, and keeps
+    peak buildup limited to a band with lower total energy. `crossover <= 0`
+    disables the split (saturates full-band, the original behavior)."""
     if amount <= 0:
         return data
     drive = 1 + amount * 10
-    return np.tanh(data * drive) / np.tanh(drive)
+    if crossover is None or crossover <= 0:
+        return np.tanh(data * drive) / np.tanh(drive)
+
+    nyq = sr / 2
+    normal_freq = min(crossover / nyq, 0.99)
+    b, a = signal.butter(4, normal_freq, btype="highpass")
+    high = signal.filtfilt(b, a, data, axis=0)
+    low = data - high
+    saturated_high = np.tanh(high * drive) / np.tanh(drive)
+    return low + saturated_high
 
 
 def true_peak_limiter(data, sr, ceiling_db=-1.0, oversample=4):
@@ -195,7 +216,8 @@ def loudness_normalize(data, sr, target_lufs):
 
 def master_file(in_path, out_path, target_lufs=-14.0, ceiling_db=-1.0,
                  crossover=120, low_mid_cut=-1.0, presence_cut=-0.5,
-                 air_boost=0.5, saturation=0.05, bit_depth="PCM_16",
+                 air_boost=0.5, saturation=0.05, saturation_crossover=630,
+                 bit_depth="PCM_16",
                  skip_eq=False, skip_mono_bass=False, skip_saturation=False,
                  width=1.0, skip_width=False):
     print(f"Loading {in_path} ...")
@@ -214,8 +236,11 @@ def master_file(in_path, out_path, target_lufs=-14.0, ceiling_db=-1.0,
         data = stereo_width(data, width)
 
     if not skip_saturation and saturation > 0:
-        print("Applying gentle saturation...")
-        data = saturate(data, saturation)
+        if saturation_crossover and saturation_crossover > 0:
+            print(f"Applying gentle saturation above {saturation_crossover:.0f}Hz...")
+        else:
+            print("Applying gentle saturation...")
+        data = saturate(data, sr, saturation, saturation_crossover)
 
     print(f"Normalizing loudness to {target_lufs} LUFS...")
     data, measured = loudness_normalize(data, sr, target_lufs)
@@ -342,6 +367,9 @@ def main():
     parser.add_argument("--no-eq", action="store_true")
     parser.add_argument("--no-saturation", action="store_true")
     parser.add_argument("--saturation", type=float, default=0.05, help="Saturation amount 0-1 (default 0.05)")
+    parser.add_argument("--saturation-crossover", type=float, default=630,
+                         help="Only saturate above this Hz, band below passes through unchanged; "
+                              "<= 0 saturates full-band (default 630)")
     parser.add_argument("--no-width", action="store_true")
     parser.add_argument("--width", type=float, default=1.0,
                          help="Stereo width multiplier: 1.0 = unchanged (default), 0 = mono, >1 = wider")
@@ -378,6 +406,7 @@ def main():
         target_lufs=target, ceiling_db=args.ceiling, crossover=args.crossover,
         skip_eq=args.no_eq, skip_mono_bass=args.no_mono_bass,
         skip_saturation=args.no_saturation, saturation=args.saturation,
+        saturation_crossover=args.saturation_crossover,
         bit_depth=args.bit_depth,
         skip_width=args.no_width, width=args.width,
     )

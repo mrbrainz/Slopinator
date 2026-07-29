@@ -44,6 +44,7 @@ const params = {
   crossover: 120,
   saturation: true,
   saturationAmount: 0.05,
+  saturationCrossover: 630,
   width: true,
   widthAmount: 1.0,
   target: -14,
@@ -205,13 +206,31 @@ const MODULES = [
     id: 'saturation',
     name: 'Saturation',
     enabled: () => params.saturation,
-    valueText: () => (params.saturation ? `${Math.round(params.saturationAmount * 100)}% drive` : 'bypassed'),
+    valueText: () => {
+      if (!params.saturation) return 'bypassed';
+      const drive = `${Math.round(params.saturationAmount * 100)}% drive`;
+      return params.saturationCrossover > 0 ? `${drive} above ${Math.round(params.saturationCrossover)}Hz` : drive;
+    },
     renderDetail: (container) => {
       container.appendChild(
         sliderRow('DRIVE', params.saturationAmount, 0, 1, 0.01, (v) => `${Math.round(v * 100)}%`, (v) => {
           params.saturationAmount = v;
           renderRack();
         })
+      );
+      container.appendChild(
+        sliderRow(
+          'CROSSOVER',
+          params.saturationCrossover,
+          0,
+          2000,
+          10,
+          (v) => (v > 0 ? `${Math.round(v)} Hz` : 'full-band'),
+          (v) => {
+            params.saturationCrossover = Math.round(v);
+            renderRack();
+          }
+        )
       );
       container.appendChild(
         bypassToggleRow(params.saturation, (v) => {

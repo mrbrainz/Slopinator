@@ -147,13 +147,17 @@ const DEFAULT_PRESETS = [
     // ceiling to survive lossy transcodes without inter-sample clipping.
     // Width left unchanged (100%) — has to translate safely across every
     // playback system a stream might land on, including mono/phone
-    // speakers, so no reason to push the stereo image further.
+    // speakers, so no reason to push the stereo image further. Saturation
+    // crossover kept high (800Hz) — only the air/presence band gets any
+    // harmonic drive, keeping the effect as subtle as the low drive amount
+    // itself already implies.
     params: {
       eq: true,
       monoBass: true,
       crossover: 120,
       saturation: true,
       saturationAmount: 0.03,
+      saturationCrossover: 800,
       width: true,
       widthAmount: 1.0,
       target: -14,
@@ -168,12 +172,14 @@ const DEFAULT_PRESETS = [
     // speakers/earbuds while keeping a safe -1dBTP ceiling for its transcode.
     // Slightly wider (110%) — mostly a headphone/earbud listening context,
     // where extra width reads as size rather than translation risk.
+    // Saturation crossover at 630Hz (upper-mid glue without touching bass).
     params: {
       eq: true,
       monoBass: true,
       crossover: 100,
       saturation: true,
       saturationAmount: 0.05,
+      saturationCrossover: 630,
       width: true,
       widthAmount: 1.1,
       target: -11,
@@ -189,12 +195,17 @@ const DEFAULT_PRESETS = [
     // to protect. A bit more width (115%) for size on a big system —
     // mono_bass already protects everything below the crossover, so this
     // only ever widens content that's already safe to spread out.
+    // Saturation crossover lowered to 400Hz — with the most drive of the
+    // three presets, more of the spectrum gets harmonic excitement for
+    // perceived loudness/punch, while still sitting well above the 80Hz
+    // mono-bass crossover so it never fights that safety net either.
     params: {
       eq: true,
       monoBass: true,
       crossover: 80,
       saturation: true,
       saturationAmount: 0.08,
+      saturationCrossover: 400,
       width: true,
       widthAmount: 1.15,
       target: -8,
@@ -228,6 +239,23 @@ function withWidthDefault(preset) {
   };
 }
 
+// Same backfill as withWidthDefault, for presets saved before the
+// saturation-crossover option existed (band-split saturation): the tuned
+// value from the matching built-in preset by name, or a neutral 630Hz
+// (the default landed on for the Saturation module's crossover slider) for
+// a custom preset.
+function withSaturationCrossoverDefault(preset) {
+  if (preset.params.saturationCrossover !== undefined) return preset;
+  const builtin = DEFAULT_PRESETS.find((p) => p.name === preset.name);
+  return {
+    ...preset,
+    params: {
+      ...preset.params,
+      saturationCrossover: builtin ? builtin.params.saturationCrossover : 630,
+    },
+  };
+}
+
 function loadPresets(userDataDir) {
   const file = presetsFilePath(userDataDir);
   if (!fs.existsSync(file)) {
@@ -236,7 +264,7 @@ function loadPresets(userDataDir) {
   }
   try {
     const saved = JSON.parse(fs.readFileSync(file, 'utf8'));
-    const migrated = saved.map(withWidthDefault);
+    const migrated = saved.map(withWidthDefault).map(withSaturationCrossoverDefault);
     if (JSON.stringify(migrated) !== JSON.stringify(saved)) {
       fs.writeFileSync(file, JSON.stringify(migrated, null, 2));
     }
