@@ -7,6 +7,8 @@ All notable changes to this project are documented here. Format is based on
 ## [Unreleased]
 
 ### Added
+- README banner (`assets/banner.png`), replacing the plain `# Slopinator`
+  H1 at the top (#62)
 - Library rows now highlight whichever track is currently loaded in
   Chain view (amber left accent + tinted background) — so switching back
   to Library after picking a track shows at a glance what's loaded,
