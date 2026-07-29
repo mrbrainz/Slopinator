@@ -50,6 +50,29 @@ All notable changes to this project are documented here. Format is based on
   final export — see "Preview vs export" in `docs/context.md`) (#53)
 
 ### Fixed
+- Chain view's Master button could launch a second, concurrent master run
+  while an earlier one was still going — clicking Master disabled the
+  button only inside `runWithLogging`, *after* the click handler's own
+  `getPreviewPath` await had already yielded control once, so a fast
+  second click (or picking a different track — `selectChainInput` also
+  calls the same `updateMasterButton()`, which re-enabled it with no idea
+  a run was active) could sneak a second `master.py` process in. Since the
+  slower/older run's completion handler unconditionally overwrote the
+  shared status line and meter sidebar, if it finished *after* a second
+  run for a different track, its stale numbers stomped whatever was just
+  shown for the track actually on screen — read exactly like "it says it
+  mastered the original track instead of the new one." Fixed with an
+  `isMastering` flag set synchronously the instant Master is clicked
+  (before any `await`), checked by every `updateMasterButton()` call, plus
+  a currently-viewed-track check before a completed run touches the
+  status line/meters (the track's own library record still always gets
+  the result, regardless of whether it's still on screen). Also fixed
+  `runMaster()`'s actual call to use the params/inputPath snapshotted at
+  click time instead of the live rack state — `paramsAtRunStart` already
+  existed for the saved `previewParams` metadata, but the real render was
+  still reading live `params`, so a slider tweak during the run could
+  produce a preview whose metadata didn't match what was actually
+  rendered (#55)
 - Drag-and-drop onto the Library screen's drop zone silently stopped
   working (drop event fired, but nothing imported) since the Electron
   31 → 43 upgrade (#48) — Electron 32 removed `File.path`, the
