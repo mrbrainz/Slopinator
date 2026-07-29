@@ -55,6 +55,11 @@ const DEFAULT_EXPORT_PARAMS = {
 };
 
 let exportQueue = [];
+// Parallel to exportQueue: true if that track's source file is missing
+// on disk (moved/deleted since import). Library already flags this on
+// its own row, but Export used to show the track with no warning at
+// all and let you queue an export that could only ever fail.
+let exportMissing = [];
 let cachedPresets = [];
 let isExporting = false;
 
@@ -83,7 +88,12 @@ function needsExport(track) {
 function setRowState(row, state, label) {
   const fill = row.querySelector('.progress-fill');
   const statusEl = row.querySelector('.export-status');
-  if (state === 'queued') {
+  if (state === 'missing') {
+    fill.style.width = '100%';
+    fill.style.background = 'var(--danger)';
+    statusEl.className = 'mini-meter warn export-status';
+    statusEl.textContent = 'File missing';
+  } else if (state === 'queued') {
     fill.style.width = '0%';
     statusEl.className = 'mini-meter empty export-status';
     statusEl.textContent = 'Queued';
@@ -173,13 +183,24 @@ function renderPresetSelect(track, presets) {
   return select;
 }
 
-function renderExportRow(track, presets) {
+function renderExportRow(track, presets, missing) {
   const row = document.createElement('div');
-  row.className = 'export-row';
+  row.className = 'export-row' + (missing ? ' missing' : '');
 
+  const nameWrap = document.createElement('div');
   const name = document.createElement('div');
   name.className = 'track-name';
   name.textContent = track.name;
+  nameWrap.appendChild(name);
+  if (missing) {
+    const warn = document.createElement('div');
+    warn.className = 'track-sub';
+    warn.textContent = `Original file missing — can't export: ${track.path}`;
+    nameWrap.appendChild(warn);
+  }
+
+  const presetSelect = renderPresetSelect(track, presets);
+  presetSelect.disabled = missing;
 
   const progressTrack = document.createElement('div');
   progressTrack.className = 'progress-track';
@@ -193,14 +214,15 @@ function renderExportRow(track, presets) {
   const actionBtn = document.createElement('button');
   actionBtn.className = 'btn ghost export-row-btn';
   actionBtn.textContent = 'Export…';
+  actionBtn.disabled = missing;
   actionBtn.addEventListener('click', async () => {
     const folder = await window.slopinator.pickExportFolder();
     if (!folder) return;
     await runQueue([track], row, folder);
   });
 
-  row.append(name, renderPresetSelect(track, presets), progressTrack, statusEl, actionBtn);
-  setRowState(row, 'queued');
+  row.append(nameWrap, presetSelect, progressTrack, statusEl, actionBtn);
+  setRowState(row, missing ? 'missing' : 'queued');
   return row;
 }
 
@@ -210,6 +232,9 @@ async function refreshExport() {
   const [tracks, presets] = await Promise.all([window.slopinator.libraryList(), window.slopinator.presetsList()]);
   cachedPresets = presets;
   exportQueue = tracks.filter(needsExport);
+  exportMissing = await Promise.all(
+    exportQueue.map((t) => window.slopinator.classifyPath(t.path).then((kind) => kind === null))
+  );
 
   const liveIds = new Set(exportQueue.map((t) => t.id));
   Array.from(exportOverrides.keys()).forEach((id) => {
@@ -219,18 +244,20 @@ async function refreshExport() {
   const alreadyExportedCount = tracks.filter(
     (t) => (t.status === 'needs_mastering' || t.status === 'mastered') && !needsExport(t)
   ).length;
+  const missingCount = exportMissing.filter(Boolean).length;
 
   const countText = `${exportQueue.length} track${exportQueue.length === 1 ? '' : 's'} queued`;
-  exportCountEl.textContent = alreadyExportedCount
-    ? `${countText} · ${alreadyExportedCount} already exported (re-master in Chain view to include again)`
-    : countText;
+  exportCountEl.textContent =
+    countText +
+    (missingCount ? ` · ${missingCount} missing (can't export until reconnected)` : '') +
+    (alreadyExportedCount ? ` · ${alreadyExportedCount} already exported (re-master in Chain view to include again)` : '');
 
   const hasTracks = exportQueue.length > 0;
   exportEmptyEl.style.display = hasTracks ? 'none' : '';
   exportContentEl.style.display = hasTracks ? '' : 'none';
 
   exportRowsEl.innerHTML = '';
-  exportQueue.forEach((track) => exportRowsEl.appendChild(renderExportRow(track, cachedPresets)));
+  exportQueue.forEach((track, i) => exportRowsEl.appendChild(renderExportRow(track, cachedPresets, exportMissing[i])));
 }
 
 function exportOutputPath(folder, track, ext) {
@@ -299,13 +326,21 @@ exportRunBtn.addEventListener('click', async () => {
   const folder = await window.slopinator.pickExportFolder();
   if (!folder) return;
 
-  const tracks = exportQueue.slice();
-  const rows = Array.from(exportRowsEl.children);
+  // A missing-file track can only ever fail, and its row's own controls
+  // are already disabled for exactly that reason — skip it here too
+  // rather than let it eat one of runQueue's "failures".
+  const allRows = Array.from(exportRowsEl.children);
+  const availableIndices = exportQueue.map((_, i) => i).filter((i) => !exportMissing[i]);
+  const tracks = availableIndices.map((i) => exportQueue[i]);
+  const rows = availableIndices.map((i) => allRows[i]);
+  const skipped = exportQueue.length - tracks.length;
+
   const failures = await runQueue(tracks, rows, folder);
 
+  const skippedText = skipped ? ` (${skipped} skipped — file missing)` : '';
   exportCountEl.textContent = failures
-    ? `Done — ${failures} of ${tracks.length} failed`
-    : `Exported ${tracks.length} track${tracks.length === 1 ? '' : 's'} to ${folder}`;
+    ? `Done — ${failures} of ${tracks.length} failed${skippedText}`
+    : `Exported ${tracks.length} track${tracks.length === 1 ? '' : 's'} to ${folder}${skippedText}`;
 });
 
 document.addEventListener('screen-activated', (e) => {

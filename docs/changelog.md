@@ -7,6 +7,12 @@ All notable changes to this project are documented here. Format is based on
 ## [Unreleased]
 
 ### Added
+- Export screen now flags a track whose source file is missing on disk
+  (moved/deleted since import) the same way Library already does —
+  dimmed row, red "Original file missing" warning with the path, preset
+  dropdown and Export… button both disabled. "Export All" skips missing
+  tracks entirely (they'd only ever fail) instead of letting them eat one
+  of the run's failure slots, and reports how many were skipped (#63)
 - README banner (`assets/banner.png`), replacing the plain `# Slopinator`
   H1 at the top (#62)
 - Library rows now highlight whichever track is currently loaded in
@@ -30,6 +36,19 @@ All notable changes to this project are documented here. Format is based on
   explicit row click does that (#59)
 
 ### Changed
+- Library list ordering reverted to match Export's — un-sorted, same as
+  `library.js`'s underlying storage order (oldest/existing tracks first,
+  new imports appended at the bottom). A previous change (#59) sorted
+  newest-first for display, which read fine for a single import but
+  reshuffled every existing row's position on each subsequent one,
+  instead of leaving existing tracks where they were and only adding new
+  ones below — the actual "top to bottom" ask. Import skeleton rows now
+  append instead of prepend to match (#63)
+- Mastering overlay's first stage line ("Loading `<full local path>`
+  ...") now reads "Loading audio file to be mastered..." — same
+  simplification #57 already did for the "Writing..." line, for the same
+  reason (the real path isn't meaningful to a user; the debug console
+  still shows it verbatim) (#63)
 - **The limiter stage was ~35x slower than it needed to be** — `true_peak_limiter()`'s
   gain-reduction computation used two per-sample Python loops (a lookahead
   max-filter and a release-envelope smoother) over the *oversampled*

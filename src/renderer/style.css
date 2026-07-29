@@ -690,6 +690,8 @@ body:not(.show-debug-console) #log{display:none;}
   border-bottom:1px solid var(--line);
   font-size:13px;
 }
+.export-row.missing{opacity:.6;}
+.export-row.missing .track-sub{color:var(--danger);}
 .export-row.head{
   color:var(--muted);
   font-size:11px;
