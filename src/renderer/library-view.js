@@ -7,6 +7,47 @@ const libraryCountEl = document.getElementById('library-count');
 const libraryDropZone = document.getElementById('library-drop-zone');
 const libraryImportBtn = document.getElementById('library-import-btn');
 
+function fileBaseName(filePath) {
+  return filePath.split(/[\\/]/).pop();
+}
+
+function throbber() {
+  const el = document.createElement('div');
+  el.className = 'throbber';
+  return el;
+}
+
+// A file being imported/analyzed shows the same row shape as a real
+// track (so it doesn't jump around in the grid once it resolves), just
+// with a spinner in every field we don't know yet — only the name is
+// real from the start, since that's all a dropped path gives us before
+// library-import's main-process round trip even begins.
+function renderSkeletonRow(filePath) {
+  const row = document.createElement('div');
+  row.className = 'track-row skeleton';
+
+  const dotEl = document.createElement('div');
+  dotEl.className = 'status-dot importing';
+
+  const nameWrap = document.createElement('div');
+  const nameEl = document.createElement('div');
+  nameEl.className = 'track-name';
+  nameEl.textContent = fileBaseName(filePath);
+  const subEl = document.createElement('div');
+  subEl.className = 'track-sub';
+  subEl.textContent = 'Importing…';
+  nameWrap.append(nameEl, subEl);
+
+  const tagWrap = document.createElement('div');
+  const tagEl = document.createElement('span');
+  tagEl.className = 'tag';
+  tagEl.textContent = 'Please wait…';
+  tagWrap.appendChild(tagEl);
+
+  row.append(dotEl, nameWrap, throbber(), tagWrap, throbber(), document.createElement('div'));
+  return row;
+}
+
 function formatDuration(sec) {
   if (sec == null) return null;
   const m = Math.floor(sec / 60);
@@ -108,12 +149,43 @@ async function refreshLibrary() {
     (missingCount ? ` · ${missingCount} missing` : '');
 }
 
+// path -> its skeleton row element, for the current in-flight import only.
+const skeletonRows = new Map();
+
 async function importPaths(paths) {
   if (!paths.length) return;
-  libraryCountEl.textContent = 'Importing…';
+  paths.forEach((filePath) => {
+    const row = renderSkeletonRow(filePath);
+    skeletonRows.set(filePath, row);
+    libraryListEl.prepend(row);
+  });
+
   await window.slopinator.libraryImport(paths);
+  // Any of this call's own skeletons still in the map belong to a path
+  // library-import-progress never matched 1:1 (a dropped folder gets
+  // expanded into per-file paths on the main-process side, so the
+  // folder's own skeleton never resolves) — refreshLibrary's full
+  // re-render clears the leftover DOM node; only delete this call's own
+  // keys here so an overlapping second import in flight isn't affected.
+  paths.forEach((filePath) => skeletonRows.delete(filePath));
   await refreshLibrary();
 }
+
+window.slopinator.onLibraryImportProgress(({ path: filePath, track }) => {
+  const skeleton = skeletonRows.get(filePath);
+  if (!skeleton || !skeleton.isConnected) return;
+
+  if (track.status === 'raw') {
+    // Added to the library, not analyzed yet — keep the skeleton up but
+    // reflect the actual stage instead of a generic "please wait".
+    const sub = skeleton.querySelector('.track-sub');
+    if (sub) sub.textContent = 'Analyzing…';
+    return;
+  }
+
+  skeleton.replaceWith(renderRow(track, false));
+  skeletonRows.delete(filePath);
+});
 
 libraryImportBtn.addEventListener('click', async () => {
   const picked = await window.slopinator.pickImportFiles();
@@ -136,7 +208,7 @@ libraryImportBtn.addEventListener('click', async () => {
 
 libraryDropZone.addEventListener('drop', (e) => {
   const paths = Array.from(e.dataTransfer.files)
-    .map((f) => f.path)
+    .map((f) => window.slopinator.getPathForFile(f))
     .filter(Boolean);
   importPaths(paths);
 });

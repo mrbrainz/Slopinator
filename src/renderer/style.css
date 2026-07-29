@@ -252,6 +252,25 @@ select{width:100%;}
 .status-dot.raw{background:var(--muted);}
 .status-dot.missing{background:var(--danger);}
 
+@keyframes spin{to{transform:rotate(360deg);}}
+.throbber{
+  width:14px;height:14px;
+  border-radius:50%;
+  border:2px solid var(--line);
+  border-top-color:var(--amber);
+  animation:spin .7s linear infinite;
+  flex-shrink:0;
+}
+.status-dot.importing{
+  background:none;
+  border:2px solid var(--line);
+  border-top-color:var(--amber);
+  animation:spin .7s linear infinite;
+}
+.track-row.skeleton{cursor:default;}
+.track-row.skeleton:hover{background:none;}
+.track-row.skeleton .tag{color:var(--muted);}
+
 .track-row.missing{opacity:.6;}
 .track-row.missing .track-sub{color:var(--danger);}
 .track-row.missing .tag{color:var(--danger);}
